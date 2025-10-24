@@ -46,7 +46,6 @@ export async function createEventWithClient(input: CreateEventInput) {
       user_metadata: {
         first_name: input.clientFirstName,
         last_name: input.clientLastName,
-        role: "client",
       },
     })
 
@@ -55,10 +54,18 @@ export async function createEventWithClient(input: CreateEventInput) {
       return { error: authError.message }
     }
 
-    const { error: profileError } = await adminClient
-      .from("profiles")
-      .update({ role: "client" })
-      .eq("id", authData.user.id)
+    const { error: profileError } = await adminClient.from("profiles").upsert(
+      {
+        id: authData.user.id,
+        role: "client",
+        first_name: input.clientFirstName,
+        last_name: input.clientLastName,
+        email: input.clientEmail,
+      },
+      {
+        onConflict: "id",
+      },
+    )
 
     if (profileError) {
       console.error("[v0] Profile error:", profileError)
