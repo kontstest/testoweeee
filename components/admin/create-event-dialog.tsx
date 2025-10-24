@@ -15,8 +15,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { createClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
+import { createEventWithClient } from "@/app/actions/admin"
 
 interface CreateEventDialogProps {
   open: boolean
@@ -27,8 +26,6 @@ interface CreateEventDialogProps {
 export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEventDialogProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
-  const supabase = createClient()
 
   const [formData, setFormData] = useState({
     name: "",
@@ -52,55 +49,26 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
     setError(null)
 
     try {
-      // Create client user account
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: formData.clientEmail,
-        password: formData.clientPassword,
-        email_confirm: true,
-        user_metadata: {
-          first_name: formData.clientFirstName,
-          last_name: formData.clientLastName,
-          role: "client",
-        },
+      const result = await createEventWithClient({
+        name: formData.name,
+        eventDate: formData.eventDate,
+        clientEmail: formData.clientEmail,
+        clientFirstName: formData.clientFirstName,
+        clientLastName: formData.clientLastName,
+        clientPassword: formData.clientPassword,
+        modules: formData.modules,
       })
 
-      if (authError) throw authError
+      if (result.error) {
+        throw new Error(result.error)
+      }
 
-      // Update profile role to client
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({ role: "client" })
-        .eq("id", authData.user.id)
-
-      if (profileError) throw profileError
-
-      // Create event
-      const { data: eventData, error: eventError } = await supabase
-        .from("events")
-        .insert({
-          name: formData.name,
-          event_date: formData.eventDate,
-          client_id: authData.user.id,
-          status: "draft",
-          module_photo_gallery: formData.modules.photo_gallery,
-          module_schedule: formData.modules.schedule,
-          module_menu: formData.modules.menu,
-          module_survey: formData.modules.survey,
-          module_bingo: formData.modules.bingo,
-        })
-        .select()
-        .single()
-
-      if (eventError) throw eventError
-
-      // TODO: Send email to client with login credentials
       console.log("[v0] Client created:", {
-        email: formData.clientEmail,
-        password: formData.clientPassword,
-        eventId: eventData.id,
+        email: result.data?.clientEmail,
+        password: result.data?.clientPassword,
+        eventId: result.data?.event.id,
       })
 
-      // Reset form
       setFormData({
         name: "",
         eventDate: "",

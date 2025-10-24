@@ -4,11 +4,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Eye, Trash2, QrCode } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useState } from "react"
 import { generateEventQRCodeUrl, getEventUrl } from "@/lib/utils/qr-code"
+import { deleteEvent } from "@/app/actions/admin"
 
 interface EventsTableProps {
   events: any[]
@@ -17,15 +17,16 @@ interface EventsTableProps {
 
 export function EventsTable({ events, onRefresh }: EventsTableProps) {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
-  const supabase = createClient()
   const router = useRouter()
 
   const handleDelete = async (eventId: string) => {
     if (!confirm("Are you sure you want to delete this event?")) return
 
-    const { error } = await supabase.from("events").delete().eq("id", eventId)
+    const result = await deleteEvent(eventId)
 
-    if (!error) {
+    if (result.error) {
+      alert(`Error: ${result.error}`)
+    } else {
       onRefresh()
     }
   }
