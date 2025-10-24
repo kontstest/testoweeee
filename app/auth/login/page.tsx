@@ -31,20 +31,24 @@ export default function LoginPage() {
       })
       if (error) throw error
 
-      // Get user profile to determine role
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", (await supabase.auth.getUser()).data.user?.id)
-        .single()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
 
-      // Redirect based on role
-      if (profile?.role === "super_admin") {
-        router.push("/admin")
-      } else if (profile?.role === "client") {
-        router.push("/client")
-      } else {
-        router.push("/")
+      if (user) {
+        const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+
+        // Refresh the router to update session
+        router.refresh()
+
+        // Redirect based on role
+        if (profile?.role === "super_admin") {
+          router.push("/admin")
+        } else if (profile?.role === "client") {
+          router.push("/client")
+        } else {
+          router.push("/")
+        }
       }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred")
