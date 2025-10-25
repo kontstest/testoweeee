@@ -7,7 +7,7 @@ export function generateEventQRCodeUrl(eventId: string): string {
 
 export function getEventUrl(eventId: string): string {
   // Always use NEXT_PUBLIC_APP_URL if available
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL
+  let baseUrl = process.env.NEXT_PUBLIC_APP_URL
 
   // If running on client side and no env var, use window.location.origin
   if (!baseUrl && typeof window !== "undefined") {
@@ -18,6 +18,12 @@ export function getEventUrl(eventId: string): string {
   if (!baseUrl) {
     throw new Error("NEXT_PUBLIC_APP_URL environment variable is not set")
   }
+
+  if (!baseUrl.startsWith("http://") && !baseUrl.startsWith("https://")) {
+    baseUrl = `https://${baseUrl}`
+  }
+
+  baseUrl = baseUrl.replace(/\/$/, "")
 
   return `${baseUrl}/event/${eventId}`
 }

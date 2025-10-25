@@ -3,7 +3,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Eye, Trash2, QrCode } from "lucide-react"
+import { Eye, Trash2, QrCode, FileText } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useState } from "react"
@@ -95,6 +95,9 @@ export function EventsTable({ events, onRefresh }: EventsTableProps) {
               <TableCell className="text-sm text-muted-foreground">{getEnabledModules(event)}</TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => router.push(`/admin/event/${event.id}`)}>
+                    <FileText className="w-4 h-4" />
+                  </Button>
                   <Button variant="ghost" size="sm" onClick={() => setSelectedEventId(event.id)}>
                     <QrCode className="w-4 h-4" />
                   </Button>
@@ -130,16 +133,6 @@ export function EventsTable({ events, onRefresh }: EventsTableProps) {
                 <p className="text-sm text-muted-foreground mb-2">Event URL:</p>
                 <code className="text-xs bg-muted px-3 py-2 rounded">{getEventUrl(selectedEventId)}</code>
               </div>
-              <Button
-                className="w-full"
-                onClick={() => {
-                  const url = getEventUrl(selectedEventId)
-                  navigator.clipboard.writeText(url)
-                  alert("URL copied to clipboard!")
-                }}
-              >
-                Copy URL
-              </Button>
             </div>
           )}
         </DialogContent>

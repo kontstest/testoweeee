@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { LogOut, Palette, Calendar, Menu, MessageSquare, Grid3x3, QrCode } from "lucide-react"
+import { LogOut, Palette, Calendar, Menu, MessageSquare, Grid3x3, QrCode, ImageIcon } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import type { Event } from "@/lib/types/database"
@@ -13,6 +13,7 @@ import { ScheduleTab } from "./schedule-tab"
 import { MenuTab } from "./menu-tab"
 import { SurveyTab } from "./survey-tab"
 import { BingoTab } from "./bingo-tab"
+import { PhotoLibraryTab } from "./photo-library-tab"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { generateEventQRCodeUrl, getEventUrl } from "@/lib/utils/qr-code"
 
@@ -126,11 +127,17 @@ export function ClientDashboard({ events: initialEvents, userId }: ClientDashboa
         <Card>
           <CardContent className="pt-6">
             <Tabs defaultValue="customization" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6">
+              <TabsList className="grid w-full grid-cols-2 lg:grid-cols-7">
                 <TabsTrigger value="customization">
                   <Palette className="w-4 h-4 mr-2" />
                   <span className="hidden sm:inline">Customization</span>
                 </TabsTrigger>
+                {selectedEvent.module_photo_gallery && (
+                  <TabsTrigger value="photos">
+                    <ImageIcon className="w-4 h-4 mr-2" />
+                    <span className="hidden sm:inline">Photos</span>
+                  </TabsTrigger>
+                )}
                 {selectedEvent.module_schedule && (
                   <TabsTrigger value="schedule">
                     <Calendar className="w-4 h-4 mr-2" />
@@ -160,6 +167,12 @@ export function ClientDashboard({ events: initialEvents, userId }: ClientDashboa
               <TabsContent value="customization" className="mt-6">
                 <CustomizationTab event={selectedEvent} onUpdate={refreshEvent} />
               </TabsContent>
+
+              {selectedEvent.module_photo_gallery && (
+                <TabsContent value="photos" className="mt-6">
+                  <PhotoLibraryTab eventId={selectedEvent.id} />
+                </TabsContent>
+              )}
 
               {selectedEvent.module_schedule && (
                 <TabsContent value="schedule" className="mt-6">
@@ -207,16 +220,6 @@ export function ClientDashboard({ events: initialEvents, userId }: ClientDashboa
               <p className="text-sm text-muted-foreground mb-2">Share this QR code with your guests!</p>
               <code className="text-xs bg-muted px-3 py-2 rounded block">{getEventUrl(selectedEvent.id)}</code>
             </div>
-            <Button
-              className="w-full"
-              onClick={() => {
-                const url = getEventUrl(selectedEvent.id)
-                navigator.clipboard.writeText(url)
-                alert("URL copied to clipboard!")
-              }}
-            >
-              Copy URL
-            </Button>
           </div>
         </DialogContent>
       </Dialog>

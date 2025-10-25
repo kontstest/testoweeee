@@ -1,22 +1,25 @@
 "use client"
-
-import type React from "react"
-
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { createClient } from "@/lib/supabase/client"
-import { Upload, Trash2, ImageIcon } from "lucide-react"
+import { Upload, ImageIcon, X, Check } from "lucide-react"
 import type { Photo } from "@/lib/types/database"
 import { useGuestAuth } from "@/lib/hooks/use-guest-auth"
 import { GuestAuthDialog } from "../guest-auth-dialog"
+import { useDropzone } from "react-dropzone"
 
 interface PhotoGalleryModuleProps {
   eventId: string
   primaryColor: string
+}
+
+interface PendingPhoto {
+  file: File
+  preview: string
+  caption: string
 }
 
 export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModuleProps) {
@@ -24,8 +27,7 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
-  const [uploadFile, setUploadFile] = useState<File | null>(null)
-  const [caption, setCaption] = useState("")
+  const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([])
   const [showAuthDialog, setShowAuthDialog] = useState(false)
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
   const { user } = useGuestAuth()
@@ -49,6 +51,34 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
     setIsLoading(false)
   }
 
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    const newPendingPhotos = acceptedFiles.map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+      caption: "",
+    }))
+    setPendingPhotos((prev) => [...prev, ...newPendingPhotos])
+  }, [])
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"],
+    },
+    multiple: true,
+  })
+
+  const removePendingPhoto = (index: number) => {
+    setPendingPhotos((prev) => {
+      URL.revokeObjectURL(prev[index].preview)
+      return prev.filter((_, i) => i !== index)
+    })
+  }
+
+  const updatePendingCaption = (index: number, caption: string) => {
+    setPendingPhotos((prev) => prev.map((photo, i) => (i === index ? { ...photo, caption } : photo)))
+  }
+
   const handleUploadClick = () => {
     if (!user) {
       setShowAuthDialog(true)
@@ -57,50 +87,40 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
     setIsUploadDialogOpen(true)
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setUploadFile(file)
-    }
-  }
-
-  const handleUpload = async () => {
-    if (!uploadFile || !user) return
+  const handleUploadAll = async () => {
+    if (pendingPhotos.length === 0 || !user) return
 
     setIsUploading(true)
 
     try {
-      // Upload to Supabase Storage
-      const fileExt = uploadFile.name.split(".").pop()
-      const fileName = `${eventId}/${user.id}-${Date.now()}.${fileExt}`
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("event-photos")
-        .upload(fileName, uploadFile)
+      for (const pendingPhoto of pendingPhotos) {
+        const fileExt = pendingPhoto.file.name.split(".").pop()
+        const fileName = `${eventId}/${user.id}-${Date.now()}.${fileExt}`
+        const { error: uploadError } = await supabase.storage.from("event-photos").upload(fileName, pendingPhoto.file)
 
-      if (uploadError) throw uploadError
+        if (uploadError) throw uploadError
 
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("event-photos").getPublicUrl(fileName)
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("event-photos").getPublicUrl(fileName)
 
-      // Save to database
-      const { error: dbError } = await supabase.from("photos").insert({
-        event_id: eventId,
-        uploaded_by: user.id,
-        image_url: publicUrl,
-        caption: caption || null,
-      })
+        const { error: dbError } = await supabase.from("photos").insert({
+          event_id: eventId,
+          uploaded_by: user.id,
+          image_url: publicUrl,
+          caption: pendingPhoto.caption || null,
+        })
 
-      if (dbError) throw dbError
+        if (dbError) throw dbError
+        URL.revokeObjectURL(pendingPhoto.preview)
+      }
 
-      // Reset form
-      setUploadFile(null)
-      setCaption("")
+      setPendingPhotos([])
       setIsUploadDialogOpen(false)
       await loadPhotos()
     } catch (error) {
-      console.error("[v0] Error uploading photo:", error)
-      alert("Failed to upload photo")
+      console.error("[v0] Error uploading photos:", error)
+      alert("Failed to upload photos")
     } finally {
       setIsUploading(false)
     }
@@ -135,14 +155,18 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
           <h2 className="text-2xl font-bold">Photo Gallery</h2>
           <p className="text-muted-foreground">Share your favorite moments</p>
         </div>
-        <Button onClick={handleUploadClick} style={{ backgroundColor: primaryColor }}>
+        <Button
+          onClick={handleUploadClick}
+          style={{ backgroundColor: primaryColor }}
+          className="hover:opacity-90 transition-opacity"
+        >
           <Upload className="w-4 h-4 mr-2" />
-          Upload Photo
+          Upload Photos
         </Button>
       </div>
 
       {photos.length === 0 ? (
-        <Card>
+        <Card className="border-dashed">
           <CardContent className="py-12 text-center">
             <ImageIcon className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
             <h3 className="text-lg font-semibold mb-2">No photos yet</h3>
@@ -157,7 +181,7 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
           {photos.map((photo) => (
             <Card
               key={photo.id}
-              className="cursor-pointer overflow-hidden hover:shadow-lg transition-shadow"
+              className="cursor-pointer overflow-hidden hover:shadow-lg hover:scale-105 transition-all duration-200"
               onClick={() => setSelectedPhoto(photo)}
             >
               <div className="aspect-square relative">
@@ -177,43 +201,80 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
         </div>
       )}
 
-      {/* Upload Dialog */}
       <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Upload Photo</DialogTitle>
+            <DialogTitle>Upload Photos</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="photo">Photo</Label>
-              <Input id="photo" type="file" accept="image/*" onChange={handleFileChange} />
+            <div
+              {...getRootProps()}
+              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                isDragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50"
+              }`}
+            >
+              <input {...getInputProps()} />
+              <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              {isDragActive ? (
+                <p className="text-lg font-medium">Drop the photos here...</p>
+              ) : (
+                <>
+                  <p className="text-lg font-medium mb-2">Drag & drop photos here</p>
+                  <p className="text-sm text-muted-foreground">or click to select files</p>
+                </>
+              )}
             </div>
-            {uploadFile && (
-              <div className="relative w-full h-48 rounded-lg overflow-hidden border">
-                <img
-                  src={URL.createObjectURL(uploadFile) || "/placeholder.svg"}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                />
+
+            {pendingPhotos.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-semibold">Photos to Upload ({pendingPhotos.length})</Label>
+                  <Button
+                    onClick={handleUploadAll}
+                    disabled={isUploading}
+                    style={{ backgroundColor: primaryColor }}
+                    className="hover:opacity-90"
+                  >
+                    <Check className="w-4 h-4 mr-2" />
+                    {isUploading ? "Uploading..." : "Confirm Upload"}
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  {pendingPhotos.map((photo, index) => (
+                    <Card key={index} className="relative group">
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => removePendingPhoto(index)}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                      <div className="aspect-square relative">
+                        <img
+                          src={photo.preview || "/placeholder.svg"}
+                          alt="Preview"
+                          className="w-full h-full object-cover rounded-t-lg"
+                        />
+                      </div>
+                      <CardContent className="p-3">
+                        <input
+                          type="text"
+                          placeholder="Add caption (optional)"
+                          value={photo.caption}
+                          onChange={(e) => updatePendingCaption(index, e.target.value)}
+                          className="w-full text-sm border-none focus:outline-none focus:ring-1 focus:ring-primary rounded px-2 py-1"
+                        />
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="caption">Caption (optional)</Label>
-              <Input
-                id="caption"
-                placeholder="Add a caption..."
-                value={caption}
-                onChange={(e) => setCaption(e.target.value)}
-              />
-            </div>
-            <Button onClick={handleUpload} disabled={!uploadFile || isUploading} className="w-full">
-              {isUploading ? "Uploading..." : "Upload"}
-            </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Photo Detail Dialog */}
       <Dialog open={!!selectedPhoto} onOpenChange={() => setSelectedPhoto(null)}>
         <DialogContent className="max-w-3xl">
           {selectedPhoto && (
@@ -234,19 +295,12 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
                 <p className="text-sm text-muted-foreground">
                   {new Date(selectedPhoto.created_at).toLocaleDateString()}
                 </p>
-                {user?.id === selectedPhoto.uploaded_by && (
-                  <Button variant="destructive" size="sm" onClick={() => handleDelete(selectedPhoto.id)}>
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete
-                  </Button>
-                )}
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Auth Dialog */}
       <GuestAuthDialog
         open={showAuthDialog}
         onOpenChange={setShowAuthDialog}

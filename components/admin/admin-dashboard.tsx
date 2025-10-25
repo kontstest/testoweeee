@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, LogOut } from "lucide-react"
+import { Plus, LogOut, TrendingUp, Calendar, Archive } from "lucide-react"
 import { CreateEventDialog } from "./create-event-dialog"
 import { EventsTable } from "./events-table"
 import { createClient } from "@/lib/supabase/client"
@@ -46,12 +46,18 @@ export function AdminDashboard({ events: initialEvents }: AdminDashboardProps) {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-white">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4 animate-in fade-in slide-in-from-top-4 duration-700">
           <div>
-            <h1 className="text-4xl font-bold text-balance mb-2">Super Admin Dashboard</h1>
+            <h1 className="text-4xl font-bold text-balance mb-2 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Super Admin Dashboard
+            </h1>
             <p className="text-muted-foreground">Manage events and client instances</p>
           </div>
-          <Button variant="outline" onClick={handleLogout}>
+          <Button
+            variant="outline"
+            onClick={handleLogout}
+            className="hover:scale-105 transition-transform bg-transparent"
+          >
             <LogOut className="w-4 h-4 mr-2" />
             Logout
           </Button>
@@ -59,44 +65,60 @@ export function AdminDashboard({ events: initialEvents }: AdminDashboardProps) {
 
         {/* Stats Cards */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Total Events</CardTitle>
-              <CardDescription>All time</CardDescription>
+          <Card
+            className="hover:shadow-lg transition-all duration-300 hover:scale-105 animate-in fade-in slide-in-from-bottom-4 duration-700"
+            style={{ animationDelay: "100ms" }}
+          >
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Events</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">{events.length}</p>
+              <div className="text-3xl font-bold">{events.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">All time</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Active Events</CardTitle>
-              <CardDescription>Currently running</CardDescription>
+          <Card
+            className="hover:shadow-lg transition-all duration-300 hover:scale-105 animate-in fade-in slide-in-from-bottom-4 duration-700"
+            style={{ animationDelay: "200ms" }}
+          >
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Events</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">{events.filter((e) => e.status === "active").length}</p>
+              <div className="text-3xl font-bold text-green-600">
+                {events.filter((e) => e.status === "active").length}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Currently running</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Draft Events</CardTitle>
-              <CardDescription>Pending setup</CardDescription>
+          <Card
+            className="hover:shadow-lg transition-all duration-300 hover:scale-105 animate-in fade-in slide-in-from-bottom-4 duration-700"
+            style={{ animationDelay: "300ms" }}
+          >
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Draft Events</CardTitle>
+              <Archive className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">{events.filter((e) => e.status === "draft").length}</p>
+              <div className="text-3xl font-bold text-yellow-600">
+                {events.filter((e) => e.status === "draft").length}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Pending setup</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Events Table */}
-        <Card>
+        <Card className="animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: "400ms" }}>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <CardTitle>Events</CardTitle>
                 <CardDescription>Manage all event instances</CardDescription>
               </div>
-              <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <Button onClick={() => setIsCreateDialogOpen(true)} className="hover:scale-105 transition-transform">
                 <Plus className="w-4 h-4 mr-2" />
                 Create Event
               </Button>
