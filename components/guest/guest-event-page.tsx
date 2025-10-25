@@ -80,12 +80,15 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
 
   return (
     <div className="min-h-screen py-8 px-4 relative overflow-hidden" style={{ backgroundColor }}>
-      {/* Background blur image */}
       {event.hero_image_url && (
         <div
-          className="fixed inset-0 bg-cover bg-center bg-no-repeat opacity-20 blur-3xl"
+          className="fixed inset-0 bg-cover bg-no-repeat"
           style={{
             backgroundImage: `url(${event.hero_image_url})`,
+            backgroundPosition: event.hero_image_position || "center center",
+            transform: "scale(1.2)", // Zoom effect
+            filter: "blur(40px)", // Heavy blur
+            opacity: 0.3, // Strong fog effect
             zIndex: 0,
           }}
         />

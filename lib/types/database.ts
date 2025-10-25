@@ -21,6 +21,7 @@ export interface Event {
   primary_color: string
   secondary_color: string
   hero_image_url: string | null
+  hero_image_position: string | null
   module_photo_gallery: boolean
   module_schedule: boolean
   module_menu: boolean

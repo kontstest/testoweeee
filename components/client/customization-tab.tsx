@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { createClient } from "@/lib/supabase/client"
 import type { Event } from "@/lib/types/database"
-import { Upload } from "lucide-react"
+import { Upload, MoveHorizontal, MoveVertical } from "lucide-react"
+import { Slider } from "@/components/ui/slider"
 
 interface CustomizationTabProps {
   event: Event
@@ -21,6 +22,16 @@ export function CustomizationTab({ event, onUpdate }: CustomizationTabProps) {
   const [secondaryColor, setSecondaryColor] = useState(event.secondary_color)
   const [heroImage, setHeroImage] = useState<File | null>(null)
   const [heroImagePreview, setHeroImagePreview] = useState(event.hero_image_url)
+  const [heroPositionX, setHeroPositionX] = useState(() => {
+    const position = event.hero_image_position || "center center"
+    const [x] = position.split(" ")
+    return x === "left" ? 0 : x === "right" ? 100 : 50
+  })
+  const [heroPositionY, setHeroPositionY] = useState(() => {
+    const position = event.hero_image_position || "center center"
+    const [, y] = position.split(" ")
+    return y === "top" ? 0 : y === "bottom" ? 100 : 50
+  })
   const supabase = createClient()
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,6 +65,8 @@ export function CustomizationTab({ event, onUpdate }: CustomizationTabProps) {
         heroImageUrl = publicUrl
       }
 
+      const heroPosition = `${heroPositionX}% ${heroPositionY}%`
+
       // Update event
       const { error } = await supabase
         .from("events")
@@ -61,6 +74,7 @@ export function CustomizationTab({ event, onUpdate }: CustomizationTabProps) {
           primary_color: primaryColor,
           secondary_color: secondaryColor,
           hero_image_url: heroImageUrl,
+          hero_image_position: heroPosition,
         })
         .eq("id", event.id)
 
@@ -75,6 +89,8 @@ export function CustomizationTab({ event, onUpdate }: CustomizationTabProps) {
       setIsLoading(false)
     }
   }
+
+  const accentColor = secondaryColor || primaryColor || "#9333ea"
 
   return (
     <div className="space-y-6">
@@ -127,12 +143,84 @@ export function CustomizationTab({ event, onUpdate }: CustomizationTabProps) {
         <h3 className="text-lg font-semibold mb-4">Hero Image</h3>
         <div className="space-y-4">
           {heroImagePreview && (
-            <div className="relative w-full h-64 rounded-lg overflow-hidden border border-border">
-              <img
-                src={heroImagePreview || "/placeholder.svg"}
-                alt="Hero preview"
-                className="w-full h-full object-cover"
-              />
+            <div className="space-y-4">
+              <div className="relative w-full h-96 rounded-lg overflow-hidden border-2 border-border">
+                <div
+                  className="absolute inset-0 bg-cover bg-no-repeat"
+                  style={{
+                    backgroundImage: `url(${heroImagePreview})`,
+                    backgroundPosition: `${heroPositionX}% ${heroPositionY}%`,
+                    transform: "scale(1.2)",
+                    filter: "blur(40px)",
+                    opacity: 0.3,
+                  }}
+                />
+
+                <div className="relative z-10 flex items-center justify-center h-full p-8">
+                  <div
+                    className="bg-white/95 backdrop-blur-sm rounded-[3rem] p-6 max-w-md w-full shadow-2xl"
+                    style={{
+                      outline: `4px solid ${accentColor}`,
+                      outlineOffset: "8px",
+                    }}
+                  >
+                    <div className="relative w-full aspect-[2/3]">
+                      <div
+                        className="absolute inset-0 overflow-hidden rounded-t-[10rem]"
+                        style={{
+                          outline: `4px solid ${accentColor}`,
+                          outlineOffset: "6px",
+                        }}
+                      >
+                        <img
+                          src={heroImagePreview || "/placeholder.svg"}
+                          alt="Hero preview"
+                          className="w-full h-full object-cover rounded-t-[10rem]"
+                          style={{
+                            objectPosition: `${heroPositionX}% ${heroPositionY}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <MoveHorizontal className="w-4 h-4" />
+                    Horizontal Position: {heroPositionX}%
+                  </Label>
+                  <Slider
+                    value={[heroPositionX]}
+                    onValueChange={([value]) => setHeroPositionX(value)}
+                    min={0}
+                    max={100}
+                    step={1}
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <MoveVertical className="w-4 h-4" />
+                    Vertical Position: {heroPositionY}%
+                  </Label>
+                  <Slider
+                    value={[heroPositionY]}
+                    onValueChange={([value]) => setHeroPositionY(value)}
+                    min={0}
+                    max={100}
+                    step={1}
+                    className="w-full"
+                  />
+                </div>
+
+                <p className="text-sm text-muted-foreground">
+                  Adjust the position to frame your image perfectly in the hero section
+                </p>
+              </div>
             </div>
           )}
 
