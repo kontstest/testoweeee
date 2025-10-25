@@ -2,14 +2,15 @@
 import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { createClient } from "@/lib/supabase/client"
-import { Upload, ImageIcon, X, Check } from "lucide-react"
+import { Upload, ImageIcon, X, Check, Heart, User } from "lucide-react"
 import type { Photo } from "@/lib/types/database"
-import { useGuestAuth } from "@/lib/hooks/use-guest-auth"
-import { GuestAuthDialog } from "../guest-auth-dialog"
 import { useDropzone } from "react-dropzone"
+import { cn } from "@/lib/utils"
 
 interface PhotoGalleryModuleProps {
   eventId: string
@@ -20,6 +21,8 @@ interface PendingPhoto {
   file: File
   preview: string
   caption: string
+  wishes: string
+  authorName: string
 }
 
 export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModuleProps) {
@@ -28,9 +31,7 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
   const [isUploading, setIsUploading] = useState(false)
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
   const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([])
-  const [showAuthDialog, setShowAuthDialog] = useState(false)
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
-  const { user } = useGuestAuth()
   const supabase = createClient()
 
   useEffect(() => {
@@ -56,6 +57,8 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
       file,
       preview: URL.createObjectURL(file),
       caption: "",
+      wishes: "",
+      authorName: "",
     }))
     setPendingPhotos((prev) => [...prev, ...newPendingPhotos])
   }, [])
@@ -75,27 +78,20 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
     })
   }
 
-  const updatePendingCaption = (index: number, caption: string) => {
-    setPendingPhotos((prev) => prev.map((photo, i) => (i === index ? { ...photo, caption } : photo)))
-  }
-
-  const handleUploadClick = () => {
-    if (!user) {
-      setShowAuthDialog(true)
-      return
-    }
-    setIsUploadDialogOpen(true)
+  const updatePendingPhoto = (index: number, field: keyof PendingPhoto, value: string) => {
+    setPendingPhotos((prev) => prev.map((photo, i) => (i === index ? { ...photo, [field]: value } : photo)))
   }
 
   const handleUploadAll = async () => {
-    if (pendingPhotos.length === 0 || !user) return
+    if (pendingPhotos.length === 0) return
 
     setIsUploading(true)
 
     try {
       for (const pendingPhoto of pendingPhotos) {
         const fileExt = pendingPhoto.file.name.split(".").pop()
-        const fileName = `${eventId}/${user.id}-${Date.now()}.${fileExt}`
+        const fileName = `${eventId}/guest-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+
         const { error: uploadError } = await supabase.storage.from("event-photos").upload(fileName, pendingPhoto.file)
 
         if (uploadError) throw uploadError
@@ -106,9 +102,11 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
 
         const { error: dbError } = await supabase.from("photos").insert({
           event_id: eventId,
-          uploaded_by: user.id,
+          uploaded_by: null,
           image_url: publicUrl,
           caption: pendingPhoto.caption || null,
+          wishes: pendingPhoto.wishes || null,
+          author_name: pendingPhoto.authorName || null,
         })
 
         if (dbError) throw dbError
@@ -120,80 +118,88 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
       await loadPhotos()
     } catch (error) {
       console.error("[v0] Error uploading photos:", error)
-      alert("Failed to upload photos")
+      alert("Failed to upload photos. Please try again.")
     } finally {
       setIsUploading(false)
     }
   }
 
-  const handleDelete = async (photoId: string) => {
-    if (!confirm("Are you sure you want to delete this photo?")) return
-
-    const { error } = await supabase.from("photos").delete().eq("id", photoId)
-
-    if (!error) {
-      await loadPhotos()
-      setSelectedPhoto(null)
-    }
-  }
-
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex items-center justify-center py-20">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading photos...</p>
+          <div className="w-16 h-16 border-4 border-gray-200 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">Loading memories...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-8">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Photo Gallery</h2>
-          <p className="text-muted-foreground">Share your favorite moments</p>
+          <h2 className="text-3xl font-bold mb-2">Photo Gallery</h2>
+          <p className="text-gray-600 text-lg">Share your favorite moments and wishes</p>
         </div>
         <Button
-          onClick={handleUploadClick}
-          style={{ backgroundColor: primaryColor }}
-          className="hover:opacity-90 transition-opacity"
+          onClick={() => setIsUploadDialogOpen(true)}
+          size="lg"
+          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl transition-all"
         >
-          <Upload className="w-4 h-4 mr-2" />
+          <Upload className="w-5 h-5 mr-2" />
           Upload Photos
         </Button>
       </div>
 
       {photos.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="py-12 text-center">
-            <ImageIcon className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">No photos yet</h3>
-            <p className="text-muted-foreground mb-4">Be the first to share a memory!</p>
-            <Button onClick={handleUploadClick} style={{ backgroundColor: primaryColor }}>
+        <Card className="border-2 border-dashed border-gray-300 bg-gradient-to-br from-gray-50 to-white">
+          <CardContent className="py-20 text-center">
+            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+              <ImageIcon className="w-12 h-12 text-purple-600" />
+            </div>
+            <h3 className="text-2xl font-bold mb-3">No photos yet</h3>
+            <p className="text-gray-600 mb-6 text-lg">Be the first to share a memory!</p>
+            <Button
+              onClick={() => setIsUploadDialogOpen(true)}
+              size="lg"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+            >
               Upload First Photo
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {photos.map((photo) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {photos.map((photo, index) => (
             <Card
               key={photo.id}
-              className="cursor-pointer overflow-hidden hover:shadow-lg hover:scale-105 transition-all duration-200"
+              className={cn(
+                "group cursor-pointer overflow-hidden hover:shadow-2xl transition-all duration-500",
+                "bg-white border-2 border-gray-100 hover:border-purple-200 hover:-translate-y-2",
+                "animate-fade-in-up",
+              )}
+              style={{ animationDelay: `${index * 50}ms` }}
               onClick={() => setSelectedPhoto(photo)}
             >
-              <div className="aspect-square relative">
+              <div className="aspect-square relative overflow-hidden">
                 <img
                   src={photo.image_url || "/placeholder.svg"}
                   alt={photo.caption || "Event photo"}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              {photo.caption && (
-                <CardContent className="p-3">
-                  <p className="text-sm text-muted-foreground line-clamp-2">{photo.caption}</p>
+              {(photo.caption || photo.wishes || photo.author_name) && (
+                <CardContent className="p-4 space-y-2">
+                  {photo.caption && <p className="text-sm font-medium text-gray-900 line-clamp-2">{photo.caption}</p>}
+                  {photo.wishes && <p className="text-sm text-gray-600 line-clamp-2 italic">"{photo.wishes}"</p>}
+                  {photo.author_name && (
+                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                      <User className="w-3 h-3" />
+                      {photo.author_name}
+                    </p>
+                  )}
                 </CardContent>
               )}
             </Card>
@@ -202,70 +208,106 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
       )}
 
       <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Upload Photos</DialogTitle>
+            <DialogTitle className="text-2xl">Share Your Memories</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div
               {...getRootProps()}
-              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                isDragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50"
-              }`}
+              className={cn(
+                "border-3 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all duration-300",
+                isDragActive
+                  ? "border-purple-500 bg-purple-50 scale-105"
+                  : "border-gray-300 hover:border-purple-400 hover:bg-purple-50/50",
+              )}
             >
               <input {...getInputProps()} />
-              <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+                <Upload className="w-10 h-10 text-purple-600" />
+              </div>
               {isDragActive ? (
-                <p className="text-lg font-medium">Drop the photos here...</p>
+                <p className="text-xl font-semibold text-purple-600">Drop your photos here...</p>
               ) : (
                 <>
-                  <p className="text-lg font-medium mb-2">Drag & drop photos here</p>
-                  <p className="text-sm text-muted-foreground">or click to select files</p>
+                  <p className="text-xl font-semibold mb-2">Drag & drop your photos</p>
+                  <p className="text-gray-500">or click to browse your files</p>
                 </>
               )}
             </div>
 
             {pendingPhotos.length > 0 && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <Label className="text-base font-semibold">Photos to Upload ({pendingPhotos.length})</Label>
+                  <Label className="text-lg font-bold">Photos to Upload ({pendingPhotos.length})</Label>
                   <Button
                     onClick={handleUploadAll}
                     disabled={isUploading}
-                    style={{ backgroundColor: primaryColor }}
-                    className="hover:opacity-90"
+                    size="lg"
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                   >
-                    <Check className="w-4 h-4 mr-2" />
+                    <Check className="w-5 h-5 mr-2" />
                     {isUploading ? "Uploading..." : "Confirm Upload"}
                   </Button>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-6">
                   {pendingPhotos.map((photo, index) => (
-                    <Card key={index} className="relative group">
+                    <Card key={index} className="relative group border-2">
                       <Button
                         variant="destructive"
                         size="icon"
-                        className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-3 right-3 z-10 shadow-lg"
                         onClick={() => removePendingPhoto(index)}
                       >
                         <X className="w-4 h-4" />
                       </Button>
-                      <div className="aspect-square relative">
-                        <img
-                          src={photo.preview || "/placeholder.svg"}
-                          alt="Preview"
-                          className="w-full h-full object-cover rounded-t-lg"
-                        />
+                      <div className="grid md:grid-cols-2 gap-6 p-6">
+                        <div className="aspect-square relative rounded-lg overflow-hidden">
+                          <img
+                            src={photo.preview || "/placeholder.svg"}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="space-y-4">
+                          <div>
+                            <Label className="text-sm font-medium mb-2 flex items-center gap-2">
+                              <ImageIcon className="w-4 h-4" />
+                              Photo Caption (Optional)
+                            </Label>
+                            <Input
+                              placeholder="Describe this moment..."
+                              value={photo.caption}
+                              onChange={(e) => updatePendingPhoto(index, "caption", e.target.value)}
+                              className="text-base"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium mb-2 flex items-center gap-2">
+                              <Heart className="w-4 h-4" />
+                              Your Wishes (Optional)
+                            </Label>
+                            <Textarea
+                              placeholder="Share your wishes and blessings..."
+                              value={photo.wishes}
+                              onChange={(e) => updatePendingPhoto(index, "wishes", e.target.value)}
+                              className="text-base min-h-[100px]"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium mb-2 flex items-center gap-2">
+                              <User className="w-4 h-4" />
+                              Your Name (Optional)
+                            </Label>
+                            <Input
+                              placeholder="From..."
+                              value={photo.authorName}
+                              onChange={(e) => updatePendingPhoto(index, "authorName", e.target.value)}
+                              className="text-base"
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <CardContent className="p-3">
-                        <input
-                          type="text"
-                          placeholder="Add caption (optional)"
-                          value={photo.caption}
-                          onChange={(e) => updatePendingCaption(index, e.target.value)}
-                          className="w-full text-sm border-none focus:outline-none focus:ring-1 focus:ring-primary rounded px-2 py-1"
-                        />
-                      </CardContent>
                     </Card>
                   ))}
                 </div>
@@ -276,40 +318,46 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
       </Dialog>
 
       <Dialog open={!!selectedPhoto} onOpenChange={() => setSelectedPhoto(null)}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-4xl">
           {selectedPhoto && (
-            <div className="space-y-4">
-              <div className="relative w-full max-h-[70vh] rounded-lg overflow-hidden">
+            <div className="space-y-6">
+              <div className="relative w-full max-h-[60vh] rounded-xl overflow-hidden">
                 <img
                   src={selectedPhoto.image_url || "/placeholder.svg"}
                   alt={selectedPhoto.caption || "Event photo"}
                   className="w-full h-full object-contain"
                 />
               </div>
-              {selectedPhoto.caption && (
-                <div>
-                  <p className="text-lg">{selectedPhoto.caption}</p>
+              <div className="space-y-4">
+                {selectedPhoto.caption && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-1">Caption</h3>
+                    <p className="text-gray-700">{selectedPhoto.caption}</p>
+                  </div>
+                )}
+                {selectedPhoto.wishes && (
+                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                      <Heart className="w-5 h-5 text-pink-500" />
+                      Wishes
+                    </h3>
+                    <p className="text-gray-700 italic">"{selectedPhoto.wishes}"</p>
+                  </div>
+                )}
+                <div className="flex items-center justify-between pt-4 border-t">
+                  {selectedPhoto.author_name && (
+                    <p className="text-sm text-gray-600 flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      From: <span className="font-medium">{selectedPhoto.author_name}</span>
+                    </p>
+                  )}
+                  <p className="text-sm text-gray-500">{new Date(selectedPhoto.created_at).toLocaleDateString()}</p>
                 </div>
-              )}
-              <div className="flex items-center justify-between pt-4 border-t">
-                <p className="text-sm text-muted-foreground">
-                  {new Date(selectedPhoto.created_at).toLocaleDateString()}
-                </p>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
-
-      <GuestAuthDialog
-        open={showAuthDialog}
-        onOpenChange={setShowAuthDialog}
-        onSuccess={() => {
-          setShowAuthDialog(false)
-          setIsUploadDialogOpen(true)
-        }}
-        eventId={eventId}
-      />
     </div>
   )
 }
