@@ -16,8 +16,9 @@ interface GuestEventPageProps {
 
 export function GuestEventPage({ event }: GuestEventPageProps) {
   const [activeView, setActiveView] = useState<string | null>(null)
-  const backgroundColor = event.primary_color ? `${event.primary_color}15` : "#f8f4f0"
-  const accentColor = event.secondary_color || event.primary_color || "#9333ea"
+  const primaryColor = event.primary_color || "#9333ea"
+  const secondaryColor = event.secondary_color || "#ec4899"
+  const backgroundColor = `${primaryColor}15`
 
   const menuSections = [
     {
@@ -80,15 +81,15 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
 
   return (
     <div className="min-h-screen py-8 px-4 relative overflow-hidden" style={{ backgroundColor }}>
-      {event.hero_image_url && (
+      {event.background_image_url && (
         <div
           className="fixed inset-0 bg-cover bg-no-repeat"
           style={{
-            backgroundImage: `url(${event.hero_image_url})`,
-            backgroundPosition: event.hero_image_position || "center center",
-            transform: "scale(1.2)", // Zoom effect
-            filter: "blur(40px)", // Heavy blur
-            opacity: 0.3, // Strong fog effect
+            backgroundImage: `url(${event.background_image_url})`,
+            backgroundPosition: event.background_position || "center center",
+            transform: "scale(1.2)",
+            filter: `blur(${event.background_blur || 40}px) brightness(${event.background_brightness || 100}%)`,
+            opacity: (event.background_opacity || 30) / 100,
             zIndex: 0,
           }}
         />
@@ -99,24 +100,24 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
         <div
           className="bg-white/95 backdrop-blur-sm rounded-[3rem] overflow-hidden shadow-2xl"
           style={{
-            outline: `4px solid ${accentColor}`,
+            outline: `4px solid ${secondaryColor}`,
             outlineOffset: "8px",
           }}
         >
           {/* Header */}
-          <div className="text-center py-12 px-6" style={{ backgroundColor: `${accentColor}10` }}>
+          <div className="text-center py-12 px-6" style={{ backgroundColor: `${primaryColor}10` }}>
             <h1
               className="mb-2"
               style={{
                 fontFamily: "var(--font-script)",
                 fontSize: "4rem",
-                color: accentColor,
+                color: secondaryColor,
                 lineHeight: "1.2",
               }}
             >
               {event.name}
             </h1>
-            <div className="w-32 h-1 mx-auto mb-4 rounded-full" style={{ backgroundColor: accentColor }} />
+            <div className="w-32 h-1 mx-auto mb-4 rounded-full" style={{ backgroundColor: secondaryColor }} />
             <p className="text-gray-700">
               {new Date(event.event_date).toLocaleDateString("pl-PL", {
                 year: "numeric",
@@ -133,7 +134,7 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
                 <div
                   className="absolute inset-0 overflow-hidden rounded-t-[10rem]"
                   style={{
-                    outline: `4px solid ${accentColor}`,
+                    outline: `4px solid ${secondaryColor}`,
                     outlineOffset: "6px",
                   }}
                 >
@@ -141,11 +142,14 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
                     src={event.hero_image_url || "/placeholder.svg"}
                     alt={event.name}
                     className="w-full h-full object-cover rounded-t-[10rem]"
+                    style={{
+                      objectPosition: event.hero_image_position || "center center",
+                    }}
                   />
                   <div
                     className="absolute inset-0 rounded-t-[10rem]"
                     style={{
-                      background: `linear-gradient(to bottom, ${accentColor}20, transparent 30%, transparent 70%, ${accentColor}20)`,
+                      background: `linear-gradient(to bottom, ${secondaryColor}20, transparent 30%, transparent 70%, ${secondaryColor}20)`,
                     }}
                   />
                 </div>
@@ -187,13 +191,13 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
                       style={
                         section.isPrimary
                           ? {
-                              backgroundColor: accentColor,
+                              backgroundColor: secondaryColor,
                               color: "white",
                             }
                           : {
                               backgroundColor: "white",
-                              color: accentColor,
-                              border: `2px solid ${accentColor}`,
+                              color: secondaryColor,
+                              border: `2px solid ${secondaryColor}`,
                             }
                       }
                     >
@@ -227,7 +231,7 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
                     onClick={() => setActiveView(null)}
                     variant="outline"
                     className="rounded-2xl"
-                    style={{ borderColor: accentColor, color: accentColor }}
+                    style={{ borderColor: secondaryColor, color: secondaryColor }}
                   >
                     <X className="w-4 h-4 mr-2" />
                     Powrót
@@ -240,25 +244,25 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
                   transition={{ delay: 0.2, duration: 0.3 }}
                 >
                   {(activeView === "gallery" || activeView === "gallery-view") && (
-                    <PhotoGalleryModule eventId={event.id} primaryColor={accentColor} />
+                    <PhotoGalleryModule eventId={event.id} primaryColor={secondaryColor} />
                   )}
-                  {activeView === "schedule" && <ScheduleModule eventId={event.id} primaryColor={accentColor} />}
-                  {activeView === "menu" && <MenuModule eventId={event.id} primaryColor={accentColor} />}
-                  {activeView === "bingo" && <BingoModule eventId={event.id} primaryColor={accentColor} />}
-                  {activeView === "survey" && <SurveyModule eventId={event.id} primaryColor={accentColor} />}
+                  {activeView === "schedule" && <ScheduleModule eventId={event.id} primaryColor={secondaryColor} />}
+                  {activeView === "menu" && <MenuModule eventId={event.id} primaryColor={secondaryColor} />}
+                  {activeView === "bingo" && <BingoModule eventId={event.id} primaryColor={secondaryColor} />}
+                  {activeView === "survey" && <SurveyModule eventId={event.id} primaryColor={secondaryColor} />}
                 </motion.div>
               </motion.div>
             )}
           </AnimatePresence>
 
           {/* Footer */}
-          <div className="text-center py-8 px-6" style={{ backgroundColor: `${accentColor}10` }}>
+          <div className="text-center py-8 px-6" style={{ backgroundColor: `${primaryColor}10` }}>
             <p
               className="mb-2"
               style={{
                 fontFamily: "var(--font-script)",
                 fontSize: "2rem",
-                color: accentColor,
+                color: secondaryColor,
               }}
             >
               Dziękujemy
