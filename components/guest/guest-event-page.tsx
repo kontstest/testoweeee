@@ -10,6 +10,9 @@ import { MenuModule } from "./modules/menu-module"
 import { SurveyModule } from "./modules/survey-module"
 import { BingoModule } from "./modules/bingo-module"
 import { VendorsModule } from "./modules/vendors-module"
+import { LanguageSwitcher } from "@/components/ui/language-switcher"
+import { useLanguage } from "@/lib/hooks/use-language"
+import { translations } from "@/lib/i18n/translations"
 
 interface GuestEventPageProps {
   event: Event
@@ -17,79 +20,78 @@ interface GuestEventPageProps {
 
 export function GuestEventPage({ event }: GuestEventPageProps) {
   const [activeView, setActiveView] = useState<string | null>(null)
+  const { language } = useLanguage()
+  const isWedding = event.event_type === "wedding"
+  const t = translations[language][isWedding ? "wedding" : "event"]
+
   const primaryColor = event.primary_color || "#9333ea"
   const secondaryColor = event.secondary_color || "#ec4899"
   const contentBackgroundColor = event.content_background_color || "#ffffff"
   const backgroundColor = `${primaryColor}15`
-  const isWedding = event.event_type === "wedding"
 
   const menuSections = [
     {
-      title: isWedding ? "Pokaż nam jak się bawisz" : "Podziel się swoimi zdjęciami",
-      description: isWedding ? "Prześlij zdjęcia i podziel się życzeniami" : "Uwiecznij najlepsze momenty wydarzenia",
+      title: t.uploadPhotos,
+      description: t.uploadPhotosDesc,
       icon: Upload,
-      buttonText: "Prześlij zdjęcia",
+      buttonText: t.uploadButton,
       viewId: "gallery",
       isPrimary: true,
-      enabled: event.module_photo_gallery,
+      enabled: event.module_photo_gallery && event.module_photo_gallery_visible,
     },
     {
-      title: isWedding ? "Nasze wspólne wspomnienia" : "Galeria wydarzenia",
-      description: isWedding
-        ? "Zobacz wszystkie zdjęcia z naszego wesela"
-        : "Zobacz wszystkie zdjęcia dodane przez uczestników",
+      title: t.gallery,
+      description: t.galleryDesc,
       icon: Camera,
-      buttonText: "Zobacz galerię",
+      buttonText: t.galleryButton,
       viewId: "gallery-view",
       isPrimary: false,
-      enabled: event.module_photo_gallery,
+      enabled: event.module_photo_gallery && event.module_photo_gallery_visible,
     },
     {
-      title: isWedding ? "Nasi Usługodawcy" : "Partnerzy Wydarzenia",
-      description: isWedding
-        ? "Poznaj profesjonalistów którzy pomogli nam w organizacji"
-        : "Poznaj naszych partnerów i sponsorów",
+      title: t.vendors,
+      description: t.vendorsDesc,
       icon: ListChecks,
-      buttonText: isWedding ? "Zobacz usługodawców" : "Zobacz partnerów",
+      buttonText: t.vendorsButton,
       viewId: "vendors",
       isPrimary: false,
-      enabled: isWedding,
+      enabled: isWedding && event.module_vendors_visible,
     },
     {
-      title: isWedding ? "Plan naszego wielkiego dnia" : "Harmonogram wydarzenia",
-      description: isWedding ? "Pełny plan dnia - od ceremonii do końca zabawy" : "Zobacz pełny program wydarzenia",
+      title: t.schedule,
+      description: t.scheduleDesc,
       icon: Calendar,
-      buttonText: "Zobacz harmonogram",
+      buttonText: t.scheduleButton,
       viewId: "schedule",
       isPrimary: false,
-      enabled: event.module_schedule,
+      enabled: event.module_schedule && event.module_schedule_visible,
     },
     {
-      title: isWedding ? "Menu weselne" : "Menu wydarzenia",
-      description: isWedding ? "Zobacz co przygotowaliśmy dla naszych gości" : "Sprawdź dostępne opcje kulinarne",
+      title: t.menu,
+      description: t.menuDesc,
       icon: MenuIcon,
-      buttonText: "Zobacz menu",
+      buttonText: t.menuButton,
       viewId: "menu",
       isPrimary: false,
-      enabled: event.module_menu,
+      enabled: event.module_menu && event.module_menu_visible,
     },
     {
-      title: isWedding ? "Weselne zabawy" : "Interaktywne atrakcje",
-      description: isWedding ? "Zagraj z nami w BINGO i wygraj nagrody" : "Weź udział w zabawach i konkursach",
+      title: t.bingo,
+      description: t.bingoDesc,
       icon: Grid3x3,
-      buttonText: "Zagraj w BINGO",
+      buttonText: t.bingoButton,
       viewId: "bingo",
       isPrimary: false,
-      enabled: event.module_bingo,
+      enabled: event.module_bingo && event.module_bingo_visible,
     },
     {
-      title: isWedding ? "Podziel się opinią" : "Wypełnij ankietę",
-      description: isWedding ? "Pomóż nam uczynić ten dzień jeszcze lepszym" : "Twoja opinia jest dla nas ważna",
+      title: t.survey,
+      description: t.surveyDesc,
       icon: ListChecks,
-      buttonText: "Wypełnij ankietę",
+      buttonText: t.surveyButton,
       viewId: "survey",
       isPrimary: false,
-      enabled: event.module_survey,
+      enabled: event.module_survey && event.module_survey_visible,
     },
   ]
 
@@ -104,6 +106,10 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
 
   return (
     <div className="min-h-screen py-8 px-4 relative overflow-hidden" style={{ backgroundColor }}>
+      <div className="fixed top-4 right-4 z-50">
+        <LanguageSwitcher />
+      </div>
+
       {event.background_image_url && (
         <div
           className="fixed inset-0 bg-cover bg-no-repeat"
@@ -118,7 +124,6 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
         />
       )}
 
-      {/* Main content box */}
       <div className="relative z-10 max-w-2xl mx-auto">
         <div
           className="backdrop-blur-sm rounded-[3rem] overflow-hidden shadow-2xl"
@@ -128,7 +133,6 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
             outlineOffset: "8px",
           }}
         >
-          {/* Header */}
           <div className="text-center py-12 px-6" style={{ backgroundColor: `${primaryColor}10` }}>
             <h1
               className="mb-2"
@@ -143,7 +147,7 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
             </h1>
             <div className="w-32 h-1 mx-auto mb-4 rounded-full" style={{ backgroundColor: secondaryColor }} />
             <p className="text-gray-700">
-              {new Date(event.event_date).toLocaleDateString("pl-PL", {
+              {new Date(event.event_date).toLocaleDateString(language === "pl" ? "pl-PL" : "en-US", {
                 year: "numeric",
                 month: "long",
                 day: "numeric",
@@ -151,7 +155,6 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
             </p>
           </div>
 
-          {/* Hero Image - Gothic arch shape */}
           {event.hero_image_url && (
             <div className="px-6 py-8">
               <div className="relative w-full aspect-[2/3] mx-auto max-w-md">
@@ -181,7 +184,6 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
             </div>
           )}
 
-          {/* Menu Sections */}
           <AnimatePresence mode="wait">
             {!activeView && (
               <motion.div
@@ -234,7 +236,6 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
             )}
           </AnimatePresence>
 
-          {/* Active View Content */}
           <AnimatePresence mode="wait">
             {activeView && (
               <motion.div
@@ -258,7 +259,7 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
                     style={{ borderColor: secondaryColor, color: secondaryColor }}
                   >
                     <X className="w-4 h-4 mr-2" />
-                    Powrót
+                    {t.back}
                   </Button>
                 </motion.div>
 
@@ -280,7 +281,6 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
             )}
           </AnimatePresence>
 
-          {/* Footer */}
           <div className="text-center py-8 px-6" style={{ backgroundColor: `${primaryColor}10` }}>
             <p
               className="mb-2"
@@ -290,11 +290,9 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
                 color: secondaryColor,
               }}
             >
-              {isWedding ? "Dziękujemy" : "Dziękujemy za udział"}
+              {t.thanks}
             </p>
-            <p className="text-sm text-gray-600">
-              {isWedding ? "że jesteście z nami w tym wyjątkowym dniu" : "Mamy nadzieję, że dobrze się bawicie"}
-            </p>
+            <p className="text-sm text-gray-600">{t.thanksDesc}</p>
           </div>
         </div>
       </div>

@@ -35,6 +35,12 @@ export interface Event {
   module_menu: boolean
   module_survey: boolean
   module_bingo: boolean
+  module_photo_gallery_visible: boolean
+  module_schedule_visible: boolean
+  module_menu_visible: boolean
+  module_survey_visible: boolean
+  module_bingo_visible: boolean
+  module_vendors_visible: boolean
   created_at: string
   updated_at: string
 }
@@ -156,6 +162,30 @@ export interface WeddingChecklistItem {
   completed: boolean
   priority: "low" | "medium" | "high"
   order_index: number
+  created_at: string
+  updated_at: string
+}
+
+export interface QRTemplate {
+  id: string
+  event_id: string
+  name: string
+  style: string
+  primary_color: string
+  secondary_color: string
+  background_type: "color" | "image"
+  background_value: string | null
+  qr_background_color: string | null
+  custom_text: string | null
+  decor_image: string | null
+  include_vendors: boolean
+  elements: Array<{
+    id: string
+    type: string
+    x: number
+    y: number
+    content?: string
+  }>
   created_at: string
   updated_at: string
 }

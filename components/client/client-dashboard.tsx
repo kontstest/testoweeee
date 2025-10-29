@@ -4,7 +4,19 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { LogOut, Palette, Calendar, Menu, MessageSquare, Grid3x3, QrCode, ImageIcon, Users, Heart } from "lucide-react"
+import {
+  LogOut,
+  Palette,
+  Calendar,
+  Menu,
+  MessageSquare,
+  Grid3x3,
+  QrCode,
+  ImageIcon,
+  Users,
+  Heart,
+  Eye,
+} from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import type { Event } from "@/lib/types/database"
@@ -16,6 +28,7 @@ import { BingoTab } from "./bingo-tab"
 import { PhotoLibraryTab } from "./photo-library-tab"
 import { VendorsTab } from "./vendors-tab"
 import { WeddingPlanningTab } from "./wedding-planning-tab"
+import { ModulesVisibilityTab } from "./modules-visibility-tab"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { generateEventQRCodeUrl, getEventUrl } from "@/lib/utils/qr-code"
 import { QRTemplateGenerator } from "./qr-template-generator"
@@ -147,11 +160,15 @@ export function ClientDashboard({ events: initialEvents, userId }: ClientDashboa
           <CardContent className="pt-6">
             <Tabs defaultValue="customization" className="w-full">
               <TabsList
-                className={`grid w-full ${isWedding ? "grid-cols-2 lg:grid-cols-10" : "grid-cols-2 lg:grid-cols-8"}`}
+                className={`grid w-full ${isWedding ? "grid-cols-2 lg:grid-cols-11" : "grid-cols-2 lg:grid-cols-9"}`}
               >
                 <TabsTrigger value="customization">
                   <Palette className="w-4 h-4 mr-2" />
                   <span className="hidden sm:inline">Customization</span>
+                </TabsTrigger>
+                <TabsTrigger value="modules">
+                  <Eye className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Modules</span>
                 </TabsTrigger>
                 <TabsTrigger value="qr-template">
                   <QrCode className="w-4 h-4 mr-2" />
@@ -203,6 +220,10 @@ export function ClientDashboard({ events: initialEvents, userId }: ClientDashboa
 
               <TabsContent value="customization" className="mt-6">
                 <CustomizationTab event={selectedEvent} onUpdate={refreshEvent} />
+              </TabsContent>
+
+              <TabsContent value="modules" className="mt-6">
+                <ModulesVisibilityTab event={selectedEvent} onUpdate={refreshEvent} />
               </TabsContent>
 
               <TabsContent value="qr-template" className="mt-6">
