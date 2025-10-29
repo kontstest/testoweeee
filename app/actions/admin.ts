@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache"
 interface CreateEventInput {
   name: string
   eventDate: string
+  eventType: "wedding" | "event"
   clientEmail: string
   clientFirstName: string
   clientLastName: string
@@ -79,6 +80,7 @@ export async function createEventWithClient(input: CreateEventInput) {
         event_date: input.eventDate,
         client_id: authData.user.id,
         status: "draft",
+        event_type: input.eventType,
         module_photo_gallery: input.modules.photo_gallery,
         module_schedule: input.modules.schedule,
         module_menu: input.modules.menu,

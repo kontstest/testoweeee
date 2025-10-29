@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { createEventWithClient } from "@/app/actions/admin"
 
 interface CreateEventDialogProps {
@@ -30,6 +31,7 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
   const [formData, setFormData] = useState({
     name: "",
     eventDate: "",
+    eventType: "wedding" as "wedding" | "event",
     clientEmail: "",
     clientFirstName: "",
     clientLastName: "",
@@ -52,6 +54,7 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
       const result = await createEventWithClient({
         name: formData.name,
         eventDate: formData.eventDate,
+        eventType: formData.eventType,
         clientEmail: formData.clientEmail,
         clientFirstName: formData.clientFirstName,
         clientLastName: formData.clientLastName,
@@ -72,6 +75,7 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
       setFormData({
         name: "",
         eventDate: "",
+        eventType: "wedding",
         clientEmail: "",
         clientFirstName: "",
         clientLastName: "",
@@ -126,6 +130,26 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
                   value={formData.eventDate}
                   onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
                 />
+              </div>
+              <div className="grid gap-2">
+                <Label>Event Type</Label>
+                <RadioGroup
+                  value={formData.eventType}
+                  onValueChange={(value) => setFormData({ ...formData, eventType: value as "wedding" | "event" })}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="wedding" id="wedding" />
+                    <Label htmlFor="wedding" className="cursor-pointer font-normal">
+                      Wedding - Full wedding planning features with budget, vendors, and timeline
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="event" id="event" />
+                    <Label htmlFor="event" className="cursor-pointer font-normal">
+                      General Event - Corporate events, parties, conferences
+                    </Label>
+                  </div>
+                </RadioGroup>
               </div>
             </div>
 

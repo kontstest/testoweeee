@@ -1,5 +1,6 @@
 export type UserRole = "super_admin" | "client" | "guest"
 export type EventStatus = "draft" | "active" | "completed" | "archived"
+export type EventType = "wedding" | "event"
 
 export interface Profile {
   id: string
@@ -18,6 +19,7 @@ export interface Event {
   status: EventStatus
   client_id: string
   qr_code: string | null
+  event_type: EventType
   primary_color: string
   secondary_color: string
   hero_image_url: string | null
