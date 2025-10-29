@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { LogOut, Palette, Calendar, Menu, MessageSquare, Grid3x3, QrCode, ImageIcon } from "lucide-react"
+import { LogOut, Palette, Calendar, Menu, MessageSquare, Grid3x3, QrCode, ImageIcon, Users, Heart } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import type { Event } from "@/lib/types/database"
@@ -14,6 +14,8 @@ import { MenuTab } from "./menu-tab"
 import { SurveyTab } from "./survey-tab"
 import { BingoTab } from "./bingo-tab"
 import { PhotoLibraryTab } from "./photo-library-tab"
+import { VendorsTab } from "./vendors-tab"
+import { WeddingPlanningTab } from "./wedding-planning-tab"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { generateEventQRCodeUrl, getEventUrl } from "@/lib/utils/qr-code"
 
@@ -58,14 +60,20 @@ export function ClientDashboard({ events: initialEvents, userId }: ClientDashboa
     )
   }
 
+  const isWedding = selectedEvent.event_type === "wedding"
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-white">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-balance mb-2">Client Dashboard</h1>
-            <p className="text-muted-foreground">Customize your event experience</p>
+            <h1 className="text-4xl font-bold text-balance mb-2">
+              {isWedding ? "Wedding Dashboard" : "Event Dashboard"}
+            </h1>
+            <p className="text-muted-foreground">
+              {isWedding ? "Plan your perfect wedding day" : "Customize your event experience"}
+            </p>
           </div>
           <Button variant="outline" onClick={handleLogout}>
             <LogOut className="w-4 h-4 mr-2" />
@@ -87,6 +95,7 @@ export function ClientDashboard({ events: initialEvents, userId }: ClientDashboa
                     variant={selectedEvent.id === event.id ? "default" : "outline"}
                     onClick={() => setSelectedEvent(event)}
                   >
+                    {event.event_type === "wedding" && <Heart className="w-4 h-4 mr-2" />}
                     {event.name}
                   </Button>
                 ))}
@@ -100,7 +109,16 @@ export function ClientDashboard({ events: initialEvents, userId }: ClientDashboa
           <CardHeader>
             <div className="flex items-start justify-between">
               <div>
-                <CardTitle className="text-2xl">{selectedEvent.name}</CardTitle>
+                <div className="flex items-center gap-2 mb-2">
+                  <CardTitle className="text-2xl">{selectedEvent.name}</CardTitle>
+                  <span
+                    className={`text-xs px-2 py-1 rounded ${
+                      isWedding ? "bg-pink-100 text-pink-800" : "bg-blue-100 text-blue-800"
+                    }`}
+                  >
+                    {isWedding ? "Wedding" : "Event"}
+                  </span>
+                </div>
                 <CardDescription>
                   {new Date(selectedEvent.event_date).toLocaleDateString("en-US", {
                     weekday: "long",
@@ -127,15 +145,29 @@ export function ClientDashboard({ events: initialEvents, userId }: ClientDashboa
         <Card>
           <CardContent className="pt-6">
             <Tabs defaultValue="customization" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 lg:grid-cols-7">
+              <TabsList
+                className={`grid w-full ${isWedding ? "grid-cols-2 lg:grid-cols-9" : "grid-cols-2 lg:grid-cols-7"}`}
+              >
                 <TabsTrigger value="customization">
                   <Palette className="w-4 h-4 mr-2" />
                   <span className="hidden sm:inline">Customization</span>
                 </TabsTrigger>
+                {isWedding && (
+                  <TabsTrigger value="planning">
+                    <Heart className="w-4 h-4 mr-2" />
+                    <span className="hidden sm:inline">Planning</span>
+                  </TabsTrigger>
+                )}
                 {selectedEvent.module_photo_gallery && (
                   <TabsTrigger value="photos">
                     <ImageIcon className="w-4 h-4 mr-2" />
                     <span className="hidden sm:inline">Photos</span>
+                  </TabsTrigger>
+                )}
+                {isWedding && (
+                  <TabsTrigger value="vendors">
+                    <Users className="w-4 h-4 mr-2" />
+                    <span className="hidden sm:inline">Vendors</span>
                   </TabsTrigger>
                 )}
                 {selectedEvent.module_schedule && (
@@ -168,9 +200,21 @@ export function ClientDashboard({ events: initialEvents, userId }: ClientDashboa
                 <CustomizationTab event={selectedEvent} onUpdate={refreshEvent} />
               </TabsContent>
 
+              {isWedding && (
+                <TabsContent value="planning" className="mt-6">
+                  <WeddingPlanningTab eventId={selectedEvent.id} />
+                </TabsContent>
+              )}
+
               {selectedEvent.module_photo_gallery && (
                 <TabsContent value="photos" className="mt-6">
                   <PhotoLibraryTab eventId={selectedEvent.id} />
+                </TabsContent>
+              )}
+
+              {isWedding && (
+                <TabsContent value="vendors" className="mt-6">
+                  <VendorsTab eventId={selectedEvent.id} />
                 </TabsContent>
               )}
 

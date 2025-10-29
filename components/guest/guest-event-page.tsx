@@ -9,6 +9,7 @@ import { ScheduleModule } from "./modules/schedule-module"
 import { MenuModule } from "./modules/menu-module"
 import { SurveyModule } from "./modules/survey-module"
 import { BingoModule } from "./modules/bingo-module"
+import { VendorsModule } from "./modules/vendors-module"
 
 interface GuestEventPageProps {
   event: Event
@@ -18,7 +19,9 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
   const [activeView, setActiveView] = useState<string | null>(null)
   const primaryColor = event.primary_color || "#9333ea"
   const secondaryColor = event.secondary_color || "#ec4899"
+  const contentBackgroundColor = event.content_background_color || "#ffffff"
   const backgroundColor = `${primaryColor}15`
+  const isWedding = event.event_type === "wedding"
 
   const menuSections = [
     {
@@ -38,6 +41,17 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
       viewId: "gallery-view",
       isPrimary: false,
       enabled: event.module_photo_gallery,
+    },
+    {
+      title: isWedding ? "Nasi Usługodawcy" : "Partnerzy Wydarzenia",
+      description: isWedding
+        ? "Poznaj profesjonalistów którzy pomogli nam w organizacji"
+        : "Poznaj naszych partnerów i sponsorów",
+      icon: ListChecks,
+      buttonText: isWedding ? "Zobacz usługodawców" : "Zobacz partnerów",
+      viewId: "vendors",
+      isPrimary: false,
+      enabled: isWedding,
     },
     {
       title: "Tu zobaczysz harmonogram wydarzenia",
@@ -79,6 +93,13 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
 
   const enabledSections = menuSections.filter((s) => s.enabled)
 
+  const hexToRgba = (hex: string, alpha = 0.95) => {
+    const r = Number.parseInt(hex.slice(1, 3), 16)
+    const g = Number.parseInt(hex.slice(3, 5), 16)
+    const b = Number.parseInt(hex.slice(5, 7), 16)
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+  }
+
   return (
     <div className="min-h-screen py-8 px-4 relative overflow-hidden" style={{ backgroundColor }}>
       {event.background_image_url && (
@@ -98,8 +119,9 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
       {/* Main content box */}
       <div className="relative z-10 max-w-2xl mx-auto">
         <div
-          className="bg-white/95 backdrop-blur-sm rounded-[3rem] overflow-hidden shadow-2xl"
+          className="backdrop-blur-sm rounded-[3rem] overflow-hidden shadow-2xl"
           style={{
+            backgroundColor: hexToRgba(contentBackgroundColor, 0.95),
             outline: `4px solid ${secondaryColor}`,
             outlineOffset: "8px",
           }}
@@ -246,6 +268,7 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
                   {(activeView === "gallery" || activeView === "gallery-view") && (
                     <PhotoGalleryModule eventId={event.id} primaryColor={secondaryColor} />
                   )}
+                  {activeView === "vendors" && <VendorsModule eventId={event.id} primaryColor={secondaryColor} />}
                   {activeView === "schedule" && <ScheduleModule eventId={event.id} primaryColor={secondaryColor} />}
                   {activeView === "menu" && <MenuModule eventId={event.id} primaryColor={secondaryColor} />}
                   {activeView === "bingo" && <BingoModule eventId={event.id} primaryColor={secondaryColor} />}

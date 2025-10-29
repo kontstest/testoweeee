@@ -21,6 +21,7 @@ export function CustomizationTab({ event, onUpdate }: CustomizationTabProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [primaryColor, setPrimaryColor] = useState(event.primary_color)
   const [secondaryColor, setSecondaryColor] = useState(event.secondary_color)
+  const [contentBackgroundColor, setContentBackgroundColor] = useState(event.content_background_color || "#ffffff")
   const [heroImage, setHeroImage] = useState<File | null>(null)
   const [heroImagePreview, setHeroImagePreview] = useState(event.hero_image_url)
   const [heroPositionX, setHeroPositionX] = useState(() => {
@@ -117,6 +118,7 @@ export function CustomizationTab({ event, onUpdate }: CustomizationTabProps) {
         .update({
           primary_color: primaryColor,
           secondary_color: secondaryColor,
+          content_background_color: contentBackgroundColor,
           hero_image_url: heroImageUrl,
           hero_image_position: heroPosition,
           background_image_url: backgroundImageUrl,
@@ -143,6 +145,7 @@ export function CustomizationTab({ event, onUpdate }: CustomizationTabProps) {
     ...event,
     primary_color: primaryColor,
     secondary_color: secondaryColor,
+    content_background_color: contentBackgroundColor,
     hero_image_url: heroImagePreview,
     hero_image_position: `${heroPositionX}% ${heroPositionY}%`,
     background_image_url: backgroundImagePreview,
@@ -197,6 +200,28 @@ export function CustomizationTab({ event, onUpdate }: CustomizationTabProps) {
                 />
               </div>
               <p className="text-sm text-muted-foreground">Używany dla ramek, przycisków i tekstu</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="contentBackgroundColor">Kolor Tła Contentu</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="contentBackgroundColor"
+                  type="color"
+                  value={contentBackgroundColor}
+                  onChange={(e) => setContentBackgroundColor(e.target.value)}
+                  className="w-20 h-10"
+                />
+                <Input
+                  type="text"
+                  value={contentBackgroundColor}
+                  onChange={(e) => setContentBackgroundColor(e.target.value)}
+                  placeholder="#ffffff"
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Kolor tła głównego kontenera (bg-white/95 backdrop-blur-sm)
+              </p>
             </div>
           </div>
         </div>

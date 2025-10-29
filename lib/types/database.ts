@@ -22,6 +22,7 @@ export interface Event {
   event_type: EventType
   primary_color: string
   secondary_color: string
+  content_background_color: string
   hero_image_url: string | null
   hero_image_position: string | null
   background_image_url: string | null
@@ -101,4 +102,60 @@ export interface BingoProgress {
   completed_items: number[]
   is_winner: boolean
   created_at: string
+}
+
+export interface Vendor {
+  id: string
+  event_id: string
+  name: string
+  category: string
+  contact_name: string | null
+  phone: string | null
+  email: string | null
+  website: string | null
+  price: number | null
+  deposit_paid: number | null
+  notes: string | null
+  status: "pending" | "confirmed" | "paid" | "cancelled"
+  created_at: string
+  updated_at: string
+}
+
+export interface WeddingBudget {
+  id: string
+  event_id: string
+  total_budget: number
+  spent: number
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface WeddingExpense {
+  id: string
+  event_id: string
+  category: string
+  name: string
+  estimated_cost: number
+  actual_cost: number
+  paid: number
+  due_date: string | null
+  status: "pending" | "paid" | "overdue"
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface WeddingChecklistItem {
+  id: string
+  event_id: string
+  category: string
+  task: string
+  description: string | null
+  due_date: string | null
+  completed: boolean
+  priority: "low" | "medium" | "high"
+  order_index: number
+  created_at: string
+  updated_at: string
 }
