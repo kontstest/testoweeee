@@ -18,6 +18,7 @@ import { VendorsTab } from "./vendors-tab"
 import { WeddingPlanningTab } from "./wedding-planning-tab"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { generateEventQRCodeUrl, getEventUrl } from "@/lib/utils/qr-code"
+import { QRTemplateGenerator } from "./qr-template-generator"
 
 interface ClientDashboardProps {
   events: Event[]
@@ -146,11 +147,15 @@ export function ClientDashboard({ events: initialEvents, userId }: ClientDashboa
           <CardContent className="pt-6">
             <Tabs defaultValue="customization" className="w-full">
               <TabsList
-                className={`grid w-full ${isWedding ? "grid-cols-2 lg:grid-cols-9" : "grid-cols-2 lg:grid-cols-7"}`}
+                className={`grid w-full ${isWedding ? "grid-cols-2 lg:grid-cols-10" : "grid-cols-2 lg:grid-cols-8"}`}
               >
                 <TabsTrigger value="customization">
                   <Palette className="w-4 h-4 mr-2" />
                   <span className="hidden sm:inline">Customization</span>
+                </TabsTrigger>
+                <TabsTrigger value="qr-template">
+                  <QrCode className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">QR Template</span>
                 </TabsTrigger>
                 {isWedding && (
                   <TabsTrigger value="planning">
@@ -198,6 +203,10 @@ export function ClientDashboard({ events: initialEvents, userId }: ClientDashboa
 
               <TabsContent value="customization" className="mt-6">
                 <CustomizationTab event={selectedEvent} onUpdate={refreshEvent} />
+              </TabsContent>
+
+              <TabsContent value="qr-template" className="mt-6">
+                <QRTemplateGenerator event={selectedEvent} />
               </TabsContent>
 
               {isWedding && (

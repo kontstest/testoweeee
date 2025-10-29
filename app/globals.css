@@ -84,9 +84,7 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-sans);
-  --font-serif: var(--font-serif);
-  --font-script: var(--font-script);
+  /* Removed circular font variable references that caused "Invalid custom property" error */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

@@ -42,6 +42,7 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
       menu: false,
       survey: false,
       bingo: false,
+      vendors: false, // Added vendors module checkbox for wedding events
     },
   })
 
@@ -86,6 +87,7 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
           menu: false,
           survey: false,
           bingo: false,
+          vendors: false, // Added vendors module checkbox for wedding events
         },
       })
 
@@ -279,6 +281,23 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
                     Bingo - Interactive game for guests
                   </Label>
                 </div>
+                {formData.eventType === "wedding" && (
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="vendors"
+                      checked={formData.modules.vendors}
+                      onCheckedChange={(checked) =>
+                        setFormData({
+                          ...formData,
+                          modules: { ...formData.modules, vendors: checked as boolean },
+                        })
+                      }
+                    />
+                    <Label htmlFor="vendors" className="cursor-pointer">
+                      Vendors - Wedding service providers (photographers, caterers, etc.)
+                    </Label>
+                  </div>
+                )}
               </div>
             </div>
 

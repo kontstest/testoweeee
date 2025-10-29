@@ -25,8 +25,8 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
 
   const menuSections = [
     {
-      title: "Pokaż nam jak się bawisz",
-      description: "Prześlij zdjęcia i podziel się życzeniami",
+      title: isWedding ? "Pokaż nam jak się bawisz" : "Podziel się swoimi zdjęciami",
+      description: isWedding ? "Prześlij zdjęcia i podziel się życzeniami" : "Uwiecznij najlepsze momenty wydarzenia",
       icon: Upload,
       buttonText: "Prześlij zdjęcia",
       viewId: "gallery",
@@ -34,10 +34,12 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
       enabled: event.module_photo_gallery,
     },
     {
-      title: "Aktualna galeria wydarzenia",
-      description: "Zobacz wszystkie zdjęcia dodane przez gości",
+      title: isWedding ? "Nasze wspólne wspomnienia" : "Galeria wydarzenia",
+      description: isWedding
+        ? "Zobacz wszystkie zdjęcia z naszego wesela"
+        : "Zobacz wszystkie zdjęcia dodane przez uczestników",
       icon: Camera,
-      buttonText: "Galeria zdjęć",
+      buttonText: "Zobacz galerię",
       viewId: "gallery-view",
       isPrimary: false,
       enabled: event.module_photo_gallery,
@@ -54,26 +56,26 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
       enabled: isWedding,
     },
     {
-      title: "Tu zobaczysz harmonogram wydarzenia",
-      description: "Pełny plan dnia - od ceremonii do końca",
+      title: isWedding ? "Plan naszego wielkiego dnia" : "Harmonogram wydarzenia",
+      description: isWedding ? "Pełny plan dnia - od ceremonii do końca zabawy" : "Zobacz pełny program wydarzenia",
       icon: Calendar,
-      buttonText: "Harmonogram",
+      buttonText: "Zobacz harmonogram",
       viewId: "schedule",
       isPrimary: false,
       enabled: event.module_schedule,
     },
     {
-      title: "Tu zobaczysz menu wydarzenia",
-      description: "Zobacz co przygotowaliśmy dla Was",
+      title: isWedding ? "Menu weselne" : "Menu wydarzenia",
+      description: isWedding ? "Zobacz co przygotowaliśmy dla naszych gości" : "Sprawdź dostępne opcje kulinarne",
       icon: MenuIcon,
-      buttonText: "Menu",
+      buttonText: "Zobacz menu",
       viewId: "menu",
       isPrimary: false,
       enabled: event.module_menu,
     },
     {
-      title: "Atrakcje / Zabawy",
-      description: "Weź udział w zabawach",
+      title: isWedding ? "Weselne zabawy" : "Interaktywne atrakcje",
+      description: isWedding ? "Zagraj z nami w BINGO i wygraj nagrody" : "Weź udział w zabawach i konkursach",
       icon: Grid3x3,
       buttonText: "Zagraj w BINGO",
       viewId: "bingo",
@@ -81,8 +83,8 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
       enabled: event.module_bingo,
     },
     {
-      title: "Wypełnij ankietę",
-      description: "Pomóż nam uczynić ten dzień jeszcze lepszym",
+      title: isWedding ? "Podziel się opinią" : "Wypełnij ankietę",
+      description: isWedding ? "Pomóż nam uczynić ten dzień jeszcze lepszym" : "Twoja opinia jest dla nas ważna",
       icon: ListChecks,
       buttonText: "Wypełnij ankietę",
       viewId: "survey",
@@ -288,9 +290,11 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
                 color: secondaryColor,
               }}
             >
-              Dziękujemy
+              {isWedding ? "Dziękujemy" : "Dziękujemy za udział"}
             </p>
-            <p className="text-sm text-gray-600">że jesteście z nami w tym wyjątkowym dniu</p>
+            <p className="text-sm text-gray-600">
+              {isWedding ? "że jesteście z nami w tym wyjątkowym dniu" : "Mamy nadzieję, że dobrze się bawicie"}
+            </p>
           </div>
         </div>
       </div>

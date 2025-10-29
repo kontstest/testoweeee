@@ -386,14 +386,15 @@ export function CustomizationTab({ event, onUpdate }: CustomizationTabProps) {
         </div>
       </div>
 
+      {/* Right Column - Live Preview */}
       <div className="lg:sticky lg:top-4 lg:self-start">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">Podgląd Na Żywo</h3>
             <span className="text-sm text-muted-foreground">Widok gościa</span>
           </div>
-          <div className="border-4 border-border rounded-2xl overflow-hidden shadow-xl">
-            <div className="transform scale-50 origin-top-left w-[200%] h-[600px] overflow-hidden">
+          <div className="border-4 border-border rounded-2xl overflow-hidden shadow-xl bg-white">
+            <div className="transform scale-[0.35] origin-top-left w-[285%] h-[1200px] overflow-y-auto">
               <GuestEventPage event={previewEvent} />
             </div>
           </div>
