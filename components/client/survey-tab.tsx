@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/client"
 import { Plus, Trash2, X } from "lucide-react"
 import type { Survey, SurveyQuestion } from "@/lib/types/database"
+import { toast } from "sonner"
 
 interface SurveyTabProps {
   eventId: string
@@ -25,7 +26,7 @@ export function SurveyTab({ eventId }: SurveyTabProps) {
   }, [eventId])
 
   const loadSurvey = async () => {
-    const { data: surveyData } = await supabase.from("surveys").select("*").eq("event_id", eventId).single()
+    const { data: surveyData } = await supabase.from("surveys").select("*").eq("event_id", eventId).maybeSingle()
 
     if (surveyData) {
       setSurvey(surveyData)
@@ -102,7 +103,7 @@ export function SurveyTab({ eventId }: SurveyTabProps) {
             is_active: true,
           })
           .select()
-          .single()
+          .maybeSingle()
 
         if (surveyError) throw surveyError
         surveyId = newSurvey.id
@@ -126,10 +127,10 @@ export function SurveyTab({ eventId }: SurveyTabProps) {
       if (error) throw error
 
       await loadSurvey()
-      alert("Survey saved successfully!")
+      toast.success("Survey saved successfully!")
     } catch (error) {
       console.error("[v0] Error saving survey:", error)
-      alert("Failed to save survey")
+      toast.error("Failed to save survey")
     } finally {
       setIsLoading(false)
     }

@@ -2,7 +2,7 @@
 import { useState } from "react"
 import type { Event } from "@/lib/types/database"
 import { Button } from "@/components/ui/button-wedding"
-import { Camera, Upload, Calendar, MenuIcon, Grid3x3, ListChecks, X } from "lucide-react"
+import { Camera, Upload, Calendar, MenuIcon, Grid3x3, ListChecks, X, Users } from "lucide-react"
 import { motion, AnimatePresence } from "motion/react"
 import { PhotoGalleryModule } from "./modules/photo-gallery-module"
 import { ScheduleModule } from "./modules/schedule-module"
@@ -49,15 +49,6 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
       enabled: event.module_photo_gallery && event.module_photo_gallery_visible,
     },
     {
-      title: t.vendors,
-      description: t.vendorsDesc,
-      icon: ListChecks,
-      buttonText: t.vendorsButton,
-      viewId: "vendors",
-      isPrimary: false,
-      enabled: isWedding && event.module_vendors_visible,
-    },
-    {
       title: t.schedule,
       description: t.scheduleDesc,
       icon: Calendar,
@@ -92,6 +83,15 @@ export function GuestEventPage({ event }: GuestEventPageProps) {
       viewId: "survey",
       isPrimary: false,
       enabled: event.module_survey && event.module_survey_visible,
+    },
+    {
+      title: t.vendors,
+      description: t.vendorsDesc,
+      icon: Users,
+      buttonText: t.vendorsButton,
+      viewId: "vendors",
+      isPrimary: false,
+      enabled: isWedding && event.module_vendors_visible,
     },
   ]
 

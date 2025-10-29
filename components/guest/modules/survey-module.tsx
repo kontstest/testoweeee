@@ -35,13 +35,12 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
   const loadSurvey = async () => {
     setIsLoading(true)
 
-    // Load survey
     const { data: surveyData } = await supabase
       .from("surveys")
       .select("*")
       .eq("event_id", eventId)
       .eq("is_active", true)
-      .single()
+      .maybeSingle()
 
     if (surveyData) {
       setSurvey(surveyData)

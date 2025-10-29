@@ -32,8 +32,7 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
   const loadBingo = async () => {
     setIsLoading(true)
 
-    // Load bingo card
-    const { data: cardData } = await supabase.from("bingo_cards").select("*").eq("event_id", eventId).single()
+    const { data: cardData } = await supabase.from("bingo_cards").select("*").eq("event_id", eventId).maybeSingle()
 
     if (cardData) {
       setBingoCard(cardData)
@@ -45,7 +44,7 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
           .select("*")
           .eq("bingo_card_id", cardData.id)
           .eq("guest_id", user.id)
-          .single()
+          .maybeSingle()
 
         if (progressData) {
           setProgress(progressData)
@@ -61,7 +60,7 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
               is_winner: false,
             })
             .select()
-            .single()
+            .maybeSingle()
 
           if (newProgress) {
             setProgress(newProgress)

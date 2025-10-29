@@ -55,7 +55,7 @@ export function WeddingPlanningTab({ eventId }: WeddingPlanningTabProps) {
     setLoading(true)
 
     const [budgetRes, expensesRes, checklistRes] = await Promise.all([
-      supabase.from("wedding_budget").select("*").eq("event_id", eventId).single(),
+      supabase.from("wedding_budget").select("*").eq("event_id", eventId).maybeSingle(),
       supabase.from("wedding_expenses").select("*").eq("event_id", eventId).order("category"),
       supabase.from("wedding_checklist").select("*").eq("event_id", eventId).order("order_index"),
     ])

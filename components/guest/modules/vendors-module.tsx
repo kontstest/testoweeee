@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import type { Vendor } from "@/lib/types/database"
-import { Phone, Mail, Globe } from "lucide-react"
 import { motion } from "motion/react"
 
 interface VendorsModuleProps {
@@ -87,42 +86,8 @@ export function VendorsModule({ eventId, primaryColor }: VendorsModuleProps) {
                 className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm"
                 style={{ border: `2px solid ${primaryColor}20` }}
               >
-                <h4 className="font-semibold text-gray-800 mb-2">{vendor.name}</h4>
-                {vendor.contact_name && <p className="text-sm text-gray-600 mb-2">{vendor.contact_name}</p>}
-                <div className="space-y-1">
-                  {vendor.phone && (
-                    <a
-                      href={`tel:${vendor.phone}`}
-                      className="flex items-center gap-2 text-sm hover:underline"
-                      style={{ color: primaryColor }}
-                    >
-                      <Phone className="w-4 h-4" />
-                      {vendor.phone}
-                    </a>
-                  )}
-                  {vendor.email && (
-                    <a
-                      href={`mailto:${vendor.email}`}
-                      className="flex items-center gap-2 text-sm hover:underline"
-                      style={{ color: primaryColor }}
-                    >
-                      <Mail className="w-4 h-4" />
-                      {vendor.email}
-                    </a>
-                  )}
-                  {vendor.website && (
-                    <a
-                      href={vendor.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm hover:underline"
-                      style={{ color: primaryColor }}
-                    >
-                      <Globe className="w-4 h-4" />
-                      Strona www
-                    </a>
-                  )}
-                </div>
+                <h4 className="font-semibold text-gray-800 mb-1">{vendor.name}</h4>
+                {vendor.notes && <p className="text-sm text-gray-600">{vendor.notes}</p>}
               </motion.div>
             ))}
           </div>

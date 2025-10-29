@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/client"
 import { Plus, Trash2 } from "lucide-react"
 import type { BingoCard } from "@/lib/types/database"
+import { toast } from "sonner"
 
 interface BingoTabProps {
   eventId: string
@@ -24,7 +25,7 @@ export function BingoTab({ eventId }: BingoTabProps) {
   }, [eventId])
 
   const loadBingo = async () => {
-    const { data } = await supabase.from("bingo_cards").select("*").eq("event_id", eventId).single()
+    const { data } = await supabase.from("bingo_cards").select("*").eq("event_id", eventId).maybeSingle()
 
     if (data) {
       setBingoCard(data)
@@ -53,7 +54,6 @@ export function BingoTab({ eventId }: BingoTabProps) {
       const filteredItems = items.filter((item) => item.trim() !== "")
 
       if (bingoCard) {
-        // Update existing bingo card
         const { error } = await supabase
           .from("bingo_cards")
           .update({
@@ -63,7 +63,6 @@ export function BingoTab({ eventId }: BingoTabProps) {
 
         if (error) throw error
       } else {
-        // Create new bingo card
         const { error } = await supabase.from("bingo_cards").insert({
           event_id: eventId,
           title: "Event Bingo",
@@ -74,10 +73,10 @@ export function BingoTab({ eventId }: BingoTabProps) {
       }
 
       await loadBingo()
-      alert("Bingo card saved successfully!")
+      toast.success("Bingo card saved successfully!")
     } catch (error) {
       console.error("[v0] Error saving bingo:", error)
-      alert("Failed to save bingo card")
+      toast.error("Failed to save bingo card")
     } finally {
       setIsLoading(false)
     }
