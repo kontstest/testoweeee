@@ -220,14 +220,14 @@ export function CustomizationTab({ event, onUpdate }: CustomizationTabProps) {
                 />
               </div>
               <p className="text-sm text-muted-foreground">
-                Kolor tła głównego kontenera (bg-white/95 backdrop-blur-sm)
+                Kolor tła głównego kontenera 
               </p>
             </div>
           </div>
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold mb-4">Zdjęcie Hero (Gothic Arch)</h3>
+          <h3 className="text-lg font-semibold mb-4">Zdjęcie Główne</h3>
           <div className="space-y-4">
             {heroImagePreview && (
               <div className="space-y-4">
@@ -283,7 +283,7 @@ export function CustomizationTab({ event, onUpdate }: CustomizationTabProps) {
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold mb-4">Zdjęcie Tła (Background)</h3>
+          <h3 className="text-lg font-semibold mb-4">Zdjęcie Tła</h3>
           <div className="space-y-4">
             {backgroundImagePreview && (
               <div className="space-y-4">
@@ -393,8 +393,8 @@ export function CustomizationTab({ event, onUpdate }: CustomizationTabProps) {
             <h3 className="text-lg font-semibold">Podgląd Na Żywo</h3>
             <span className="text-sm text-muted-foreground">Widok gościa</span>
           </div>
-          <div className="border-4 border-border rounded-2xl overflow-hidden shadow-xl bg-white">
-            <div className="transform scale-[0.35] origin-top-left w-[285%] h-[1200px] overflow-y-auto">
+<div className="relative border-2 border-border rounded-xl bg-white shadow-lg overflow-auto h-[90vh]">
+  <div className="scale-[0.85] origin-top-left transform w-[125%]">
               <GuestEventPage event={previewEvent} />
             </div>
           </div>

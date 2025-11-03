@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import "./globals.css"
 import { Toaster } from "sonner"
+import { CookieConsent } from "@/components/cookie-consent"
 
 export const metadata: Metadata = {
   title: "EventFlow - Wedding & Event Management",
@@ -19,6 +20,7 @@ export default function RootLayout({
       <body className="antialiased">
         {children}
         <Toaster position="top-center" richColors />
+        <CookieConsent />
       </body>
     </html>
   )

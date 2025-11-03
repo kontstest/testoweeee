@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { ClientDashboard } from "@/components/client/client-dashboard"
+import { ClientDashboardSidebar } from "@/components/client/client-dashboard-sidebar"
 
 export default async function ClientPage() {
   const supabase = await createClient()
@@ -27,5 +27,5 @@ export default async function ClientPage() {
     .eq("client_id", user.id)
     .order("created_at", { ascending: false })
 
-  return <ClientDashboard events={events || []} userId={user.id} />
+  return <ClientDashboardSidebar events={events || []} userId={user.id} />
 }

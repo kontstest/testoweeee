@@ -83,15 +83,15 @@ export function ClientDashboard({ events: initialEvents, userId }: ClientDashboa
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-4xl font-bold text-balance mb-2">
-              {isWedding ? "Wedding Dashboard" : "Event Dashboard"}
+              {isWedding ? "Pulpit Weselny" : "Event Dashboard"}
             </h1>
             <p className="text-muted-foreground">
-              {isWedding ? "Plan your perfect wedding day" : "Customize your event experience"}
+              {isWedding ? "Twórz wspomnienia na całe życie" : "Customize your event experience"}
             </p>
           </div>
           <Button variant="outline" onClick={handleLogout}>
             <LogOut className="w-4 h-4 mr-2" />
-            Logout
+            Wyloguj
           </Button>
         </div>
 
@@ -99,7 +99,7 @@ export function ClientDashboard({ events: initialEvents, userId }: ClientDashboa
         {events.length > 1 && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Select Event</CardTitle>
+              <CardTitle>Wybierz</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex gap-2 flex-wrap">
@@ -134,7 +134,7 @@ export function ClientDashboard({ events: initialEvents, userId }: ClientDashboa
                   </span>
                 </div>
                 <CardDescription>
-                  {new Date(selectedEvent.event_date).toLocaleDateString("en-US", {
+                  {new Date(selectedEvent.event_date).toLocaleDateString("pl-PL", {
                     weekday: "long",
                     year: "numeric",
                     month: "long",
@@ -148,7 +148,7 @@ export function ClientDashboard({ events: initialEvents, userId }: ClientDashboa
                   QR Code
                 </Button>
                 <Button variant="outline" onClick={() => router.push(`/event/${selectedEvent.id}`)}>
-                  View Guest Page
+                  Zobacz stronę gościa
                 </Button>
               </div>
             </div>
@@ -164,38 +164,38 @@ export function ClientDashboard({ events: initialEvents, userId }: ClientDashboa
               >
                 <TabsTrigger value="customization">
                   <Palette className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Customization</span>
+                  <span className="hidden sm:inline">Personalizacja</span>
                 </TabsTrigger>
                 <TabsTrigger value="modules">
                   <Eye className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Modules</span>
+                  <span className="hidden sm:inline">Moduły</span>
                 </TabsTrigger>
                 <TabsTrigger value="qr-template">
                   <QrCode className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">QR Template</span>
+                  <span className="hidden sm:inline">Szablon QR</span>
                 </TabsTrigger>
                 {isWedding && (
                   <TabsTrigger value="planning">
                     <Heart className="w-4 h-4 mr-2" />
-                    <span className="hidden sm:inline">Planning</span>
+                    <span className="hidden sm:inline">Planowanie</span>
                   </TabsTrigger>
                 )}
                 {selectedEvent.module_photo_gallery && (
                   <TabsTrigger value="photos">
                     <ImageIcon className="w-4 h-4 mr-2" />
-                    <span className="hidden sm:inline">Photos</span>
+                    <span className="hidden sm:inline">Galeria</span>
                   </TabsTrigger>
                 )}
                 {isWedding && (
                   <TabsTrigger value="vendors">
                     <Users className="w-4 h-4 mr-2" />
-                    <span className="hidden sm:inline">Vendors</span>
+                    <span className="hidden sm:inline">Usługodawcy</span>
                   </TabsTrigger>
                 )}
                 {selectedEvent.module_schedule && (
                   <TabsTrigger value="schedule">
                     <Calendar className="w-4 h-4 mr-2" />
-                    <span className="hidden sm:inline">Schedule</span>
+                    <span className="hidden sm:inline">Harmonogram</span>
                   </TabsTrigger>
                 )}
                 {selectedEvent.module_menu && (
@@ -207,7 +207,7 @@ export function ClientDashboard({ events: initialEvents, userId }: ClientDashboa
                 {selectedEvent.module_survey && (
                   <TabsTrigger value="survey">
                     <MessageSquare className="w-4 h-4 mr-2" />
-                    <span className="hidden sm:inline">Survey</span>
+                    <span className="hidden sm:inline">Ankiety</span>
                   </TabsTrigger>
                 )}
                 {selectedEvent.module_bingo && (
@@ -280,7 +280,7 @@ export function ClientDashboard({ events: initialEvents, userId }: ClientDashboa
       <Dialog open={showQRDialog} onOpenChange={setShowQRDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Event QR Code</DialogTitle>
+            <DialogTitle>Wedding QR Code</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex justify-center">
