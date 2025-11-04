@@ -556,6 +556,19 @@ export function QRTemplateGeneratorAdvanced({ event }: QRTemplateGeneratorAdvanc
               <Input value={qrData} onChange={(e) => setQrData(e.target.value)} placeholder="https://example.com" />
             </div>
 
+            {event.access_code && (
+              <div className="space-y-2">
+                <Label>Kod dostępu dla gości</Label>
+                <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                  <p className="text-sm text-muted-foreground mb-2">Wyświetl tego kodu na wydruku:</p>
+                  <p className="text-2xl font-mono font-bold text-blue-600 text-center tracking-wider">
+                    {event.access_code}
+                  </p>
+                  <p className="text-xs text-muted-foreground text-center mt-2">Gościa mogą wpisać go na /dostep</p>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label>Kolor tła szablonu</Label>
               <Input
@@ -1188,7 +1201,7 @@ export function QRTemplateGeneratorAdvanced({ event }: QRTemplateGeneratorAdvanc
                       </>
                     )}
                     <div className="space-y-1">
-                      <Label className="text-xs">Przezroczystość: {selectedElementData.opacity}%</Label>
+                      <Label className="text-xs">Przezroczystność: {selectedElementData.opacity}%</Label>
                       <Slider
                         value={[selectedElementData.opacity || 100]}
                         onValueChange={(v) => handleElementUpdate(selectedElement!, { opacity: v[0] })}

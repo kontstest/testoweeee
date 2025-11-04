@@ -65,6 +65,9 @@ export const translations = {
       elegant: "Elegancki",
       colorful: "Kolorowy",
       minimal: "Minimalistyczny",
+      accessCode: "Kod Dostępu",
+      noQRScan: "Nie możesz zeskanować QR?",
+      useAccessCode: "Wpisz kod dostępu",
     },
     modules: {
       photoGallery: {
@@ -197,6 +200,9 @@ export const translations = {
       elegant: "Elegant",
       colorful: "Colorful",
       minimal: "Minimal",
+      accessCode: "Access Code",
+      noQRScan: "Can't scan QR?",
+      useAccessCode: "Enter access code",
     },
     modules: {
       photoGallery: {
