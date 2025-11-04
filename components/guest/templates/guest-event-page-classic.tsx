@@ -134,59 +134,66 @@ export function GuestEventPageClassic({ event }: GuestEventPageProps) {
         />
       )}
 
-      <div className="relative z-10 w-full max-w-2xl mx-auto px-1 sm:px-2">
+      <div className="relative z-10 max-w-2xl mx-auto">
+        {/* 🔸 BORDER 2px + odstęp 2px */}
         <div
-          className="backdrop-blur-sm rounded-2xl sm:rounded-[3rem] overflow-hidden shadow-xl sm:shadow-2xl"
+          className="backdrop-blur-sm rounded-[3rem] overflow-hidden shadow-2xl"
           style={{
             backgroundColor: hexToRgba(contentBackgroundColor, 0.95),
-            outline: `2px sm:border-4 solid ${secondaryColor}`,
-            outlineOffset: "4px sm:8px",
+            outline: `4px solid ${secondaryColor}`,
+            outlineOffset: "8px",
           }}
         >
-          <div className="py-6 sm:py-12 px-4 sm:px-6" style={{ backgroundColor: `${primaryColor}10` }}>
-            <h1
-              className="mb-2 text-2xl sm:text-4xl"
-              style={{
-                fontFamily: "var(--font-script)",
-                color: secondaryColor,
-                lineHeight: "1.2",
-              }}
-            >
-              {event.name}
-            </h1>
-            <div
-              className="w-20 sm:w-32 h-1 mx-auto mb-3 sm:mb-4 rounded-full"
-              style={{ backgroundColor: secondaryColor }}
-            />
-            <p className="text-xs sm:text-base text-gray-700">
-              {new Date(event.event_date).toLocaleDateString(language === "pl" ? "pl-PL" : "en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </p>
-          </div>
+          <div
+            className="backdrop-blur-sm rounded-2xl sm:rounded-[3rem] overflow-hidden shadow-xl sm:shadow-2xl"
+            style={{
+              backgroundColor: hexToRgba(contentBackgroundColor, 0.95),
+            }}
+          >
+            <div className="py-6 sm:py-12 px-4 sm:px-6 text-center" style={{ backgroundColor: `${primaryColor}10` }}>
+              <h1
+                className="mb-2 text-2xl sm:text-4xl"
+                style={{
+                  fontFamily: "var(--font-script)",
+                  color: secondaryColor,
+                  lineHeight: "1.2",
+                }}
+              >
+                {event.name}
+              </h1>
+              <div
+                className="w-20 sm:w-32 h-1 mx-auto mb-3 sm:mb-4 rounded-full"
+                style={{ backgroundColor: secondaryColor }}
+              />
+              <p className="text-xs sm:text-base text-gray-700">
+                {new Date(event.event_date).toLocaleDateString(language === "pl" ? "pl-PL" : "en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </p>
+            </div>
 
-          {event.hero_image_url && (
-            <div className="px-4 sm:px-6 py-4 sm:py-8">
-              <div className="relative w-full aspect-[2/3] mx-auto max-w-xs sm:max-w-md">
+            {event.hero_image_url && (
+            <div className="px-6 py-8">
+              <div className="relative w-full aspect-[2/3] mx-auto max-w-md">
                 <div
-                  className="absolute inset-0 overflow-hidden rounded-t-3xl sm:rounded-t-[10rem]"
+                  className="absolute inset-0 overflow-hidden rounded-t-[10rem]"
                   style={{
-                    outline: `2px sm:border-4 solid ${secondaryColor}`,
-                    outlineOffset: "3px sm:6px",
+                    outline: `4px solid ${secondaryColor}`,
+                    outlineOffset: "6px",
                   }}
                 >
                   <img
                     src={event.hero_image_url || "/placeholder.svg"}
                     alt={event.name}
-                    className="w-full h-full object-cover rounded-t-3xl sm:rounded-t-[10rem]"
+                    className="w-full h-full object-cover rounded-t-[10rem]"
                     style={{
                       objectPosition: event.hero_image_position || "center center",
                     }}
                   />
                   <div
-                    className="absolute inset-0 rounded-t-3xl sm:rounded-t-[10rem]"
+                    className="absolute inset-0 rounded-t-[10rem]"
                     style={{
                       background: `linear-gradient(to bottom, ${secondaryColor}20, transparent 30%, transparent 70%, ${secondaryColor}20)`,
                     }}
@@ -196,117 +203,118 @@ export function GuestEventPageClassic({ event }: GuestEventPageProps) {
             </div>
           )}
 
-          <AnimatePresence mode="wait">
-            {!activeView && (
-              <motion.div
-                key="menu"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className="px-4 sm:px-6 pb-6 sm:pb-8 space-y-4 sm:space-y-6"
-              >
-                {enabledSections.map((section, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05, duration: 0.3 }}
-                    className="text-center"
-                  >
-                    <div className="mb-2 sm:mb-3">
-                      <h3
-                        className="text-base sm:text-xl text-gray-800 mb-0.5 sm:mb-1"
-                        style={{ fontFamily: "var(--font-serif)" }}
-                      >
-                        {section.title}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-gray-600">{section.description}</p>
-                    </div>
-                    <Button
-                      onClick={() => setActiveView(section.viewId)}
-                      className="w-full sm:max-w-xs rounded-2xl sm:rounded-3xl py-3 sm:py-6 text-sm sm:text-base transition-all hover:scale-105"
-                      style={
-                        section.isPrimary
-                          ? {
-                              backgroundColor: secondaryColor,
-                              color: "white",
-                            }
-                          : {
-                              backgroundColor: "white",
-                              color: secondaryColor,
-                              border: `2px solid ${secondaryColor}`,
-                            }
-                      }
-                    >
-                      <section.icon className="w-4 sm:w-5 h-4 sm:h-5 mr-2" />
-                      {section.buttonText}
-                    </Button>
-                  </motion.div>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence mode="wait">
-            {activeView && (
-              <motion.div
-                key={activeView}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="px-4 sm:px-6 pb-6 sm:pb-8"
-              >
+            <AnimatePresence mode="wait">
+              {!activeView && (
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1, duration: 0.3 }}
-                  className="mb-4 sm:mb-6"
-                >
-                  <Button
-                    onClick={() => setActiveView(null)}
-                    variant="outline"
-                    className="rounded-xl sm:rounded-2xl text-sm sm:text-base"
-                    style={{ borderColor: secondaryColor, color: secondaryColor }}
-                  >
-                    <X className="w-3 sm:w-4 h-3 sm:h-4 mr-2" />
-                    {t.back}
-                  </Button>
-                </motion.div>
-
-                <motion.div
+                  key="menu"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2, duration: 0.3 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="px-4 sm:px-6 pb-6 sm:pb-8 space-y-4 sm:space-y-6"
                 >
-                  {(activeView === "gallery" || activeView === "gallery-view") && (
-                    <PhotoGalleryModule eventId={event.id} primaryColor={secondaryColor} />
-                  )}
-                  {activeView === "vendors" && <VendorsModule eventId={event.id} primaryColor={secondaryColor} />}
-                  {activeView === "schedule" && <ScheduleModule eventId={event.id} primaryColor={secondaryColor} />}
-                  {activeView === "menu" && <MenuModule eventId={event.id} primaryColor={secondaryColor} />}
-                  {activeView === "bingo" && <BingoModule eventId={event.id} primaryColor={secondaryColor} />}
-                  {activeView === "survey" && <SurveyModule eventId={event.id} primaryColor={secondaryColor} />}
-                  {activeView === "photo-overlay" && (
-                    <PhotoOverlayModule eventId={event.id} primaryColor={secondaryColor} />
-                  )}
+                  {enabledSections.map((section, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05, duration: 0.3 }}
+                      className="text-center"
+                    >
+                      <div className="mb-2 sm:mb-3">
+                        <h3
+                          className="text-base sm:text-xl text-gray-800 mb-0.5 sm:mb-1"
+                          style={{ fontFamily: "var(--font-serif)" }}
+                        >
+                          {section.title}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-gray-600">{section.description}</p>
+                      </div>
+                      <Button
+                        onClick={() => setActiveView(section.viewId)}
+                        className="w-full sm:max-w-xs rounded-2xl sm:rounded-3xl py-3 sm:py-6 text-sm sm:text-base transition-all hover:scale-105"
+                        style={
+                          section.isPrimary
+                            ? {
+                                backgroundColor: secondaryColor,
+                                color: "white",
+                              }
+                            : {
+                                backgroundColor: "white",
+                                color: secondaryColor,
+                                border: `2px solid ${secondaryColor}`,
+                              }
+                        }
+                      >
+                        <section.icon className="w-4 sm:w-5 h-4 sm:h-5 mr-2" />
+                        {section.buttonText}
+                      </Button>
+                    </motion.div>
+                  ))}
                 </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              )}
+            </AnimatePresence>
 
-          <div className="text-center py-6 sm:py-8 px-4 sm:px-6" style={{ backgroundColor: `${primaryColor}10` }}>
-            <p
-              className="mb-1 sm:mb-2 text-xl sm:text-2xl"
-              style={{
-                fontFamily: "var(--font-script)",
-                color: secondaryColor,
-              }}
-            >
-              {t.thanks}
-            </p>
-            <p className="text-xs sm:text-sm text-gray-600">{t.thanksDesc}</p>
+            <AnimatePresence mode="wait">
+              {activeView && (
+                <motion.div
+                  key={activeView}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="px-4 sm:px-6 pb-6 sm:pb-8"
+                >
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1, duration: 0.3 }}
+                    className="mb-4 sm:mb-6"
+                  >
+                    <Button
+                      onClick={() => setActiveView(null)}
+                      variant="outline"
+                      className="rounded-xl sm:rounded-2xl text-sm sm:text-base"
+                      style={{ borderColor: secondaryColor, color: secondaryColor }}
+                    >
+                      <X className="w-3 sm:w-4 h-3 sm:h-4 mr-2" />
+                      {t.back}
+                    </Button>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2, duration: 0.3 }}
+                  >
+                    {(activeView === "gallery" || activeView === "gallery-view") && (
+                      <PhotoGalleryModule eventId={event.id} primaryColor={secondaryColor} />
+                    )}
+                    {activeView === "vendors" && <VendorsModule eventId={event.id} primaryColor={secondaryColor} />}
+                    {activeView === "schedule" && <ScheduleModule eventId={event.id} primaryColor={secondaryColor} />}
+                    {activeView === "menu" && <MenuModule eventId={event.id} primaryColor={secondaryColor} />}
+                    {activeView === "bingo" && <BingoModule eventId={event.id} primaryColor={secondaryColor} />}
+                    {activeView === "survey" && <SurveyModule eventId={event.id} primaryColor={secondaryColor} />}
+                    {activeView === "photo-overlay" && (
+                      <PhotoOverlayModule eventId={event.id} primaryColor={secondaryColor} />
+                    )}
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="text-center py-6 sm:py-8 px-4 sm:px-6" style={{ backgroundColor: `${primaryColor}10` }}>
+              <p
+                className="mb-1 sm:mb-2 text-xl sm:text-2xl"
+                style={{
+                  fontFamily: "var(--font-script)",
+                  color: secondaryColor,
+                }}
+              >
+                {t.thanks}
+              </p>
+              <p className="text-xs sm:text-sm text-gray-600">{t.thanksDesc}</p>
+            </div>
           </div>
         </div>
       </div>
