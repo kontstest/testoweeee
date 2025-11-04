@@ -414,8 +414,14 @@ export function QRTemplateGeneratorAdvanced({ event }: QRTemplateGeneratorAdvanc
     setSelectedElement(elementId)
 
     const element = template.elements.find((el) => el.id === elementId)
-    if (element) {
-      setDragOffset({ x: e.clientX - element.x, y: e.clientY - element.y })
+    if (element && canvasRef.current) {
+      const rect = canvasRef.current.getBoundingClientRect()
+      const offsetX = e.clientX - rect.left
+      const offsetY = e.clientY - rect.top
+      setDragOffset({
+        x: offsetX - element.x,
+        y: offsetY - element.y,
+      })
     }
   }
 
@@ -478,18 +484,21 @@ export function QRTemplateGeneratorAdvanced({ event }: QRTemplateGeneratorAdvanc
   }
 
   const deleteTemplate = async (id: string) => {
-    if (!confirm("Czy na pewno chcesz usunąć ten szablon?")) return
-
-    const { error } = await supabase.from("qr_templates").delete().eq("id", id)
-    if (error) {
-      toast.error("Nie udało się usunąć szablonu")
-    } else {
-      toast.success("Szablon został usunięty")
-      loadSavedTemplates()
-      if (template.id === id) {
-        setTemplate(predefinedTemplates[0])
-      }
-    }
+    toast.promise(
+      (async () => {
+        const { error } = await supabase.from("qr_templates").delete().eq("id", id)
+        if (error) throw error
+        loadSavedTemplates()
+        if (template.id === id) {
+          setTemplate(predefinedTemplates[0])
+        }
+      })(),
+      {
+        loading: "Deleting template...",
+        success: "Template deleted successfully!",
+        error: "Failed to delete template",
+      },
+    )
   }
 
   const selectedElementData = template.elements.find((el) => el.id === selectedElement)
@@ -518,9 +527,9 @@ export function QRTemplateGeneratorAdvanced({ event }: QRTemplateGeneratorAdvanc
     <div className="space-y-6">
       {template.customCSS && <style>{template.customCSS}</style>}
 
-      <div className="flex flex-wrap gap-6 lg:grid lg:grid-cols-[320px_1fr_280px]">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
         {/* Left Sidebar - Settings */}
-        <Card className="w-full lg:w-auto">
+        <Card className="w-full lg:w-80 lg:flex-shrink-0">
           <CardHeader>
             <CardTitle>Generator Szablonów QR</CardTitle>
             <p className="text-sm text-muted-foreground">Format A4 składany na pół</p>
@@ -637,214 +646,244 @@ export function QRTemplateGeneratorAdvanced({ event }: QRTemplateGeneratorAdvanc
         </Card>
 
         {/* Center - Canvas */}
-        <div className="space-y-4 w-full lg:flex-1">
+        <div className="space-y-4 flex-1 min-w-0">
           <Card>
             <CardHeader>
               <CardTitle>Podgląd na żywo</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <div
-                  ref={canvasRef}
-                  className="relative mx-auto border-2 border-dashed border-border rounded-lg overflow-hidden cursor-crosshair"
-                  style={{
-                    width: `${CANVAS_WIDTH}px`,
-                    height: `${CANVAS_HEIGHT}px`,
-                    maxWidth: "100%",
-                    background: template.background,
-                    backgroundImage: template.backgroundImage ? `url(${template.backgroundImage})` : undefined,
-                    backgroundSize: `${template.backgroundScale}%`,
-                    backgroundPosition: `${template.backgroundX}% ${template.backgroundY}%`,
-                    backgroundRepeat: "no-repeat",
-                  }}
-                  onMouseMove={handleMouseMove}
-                  onMouseUp={handleMouseUp}
-                  onMouseLeave={handleMouseUp}
-                >
-                  <div className="absolute top-2 left-2 bg-blue-600 text-white px-3 py-1 rounded text-sm z-[30000]">
-                    Strona 1 (Przód)
-                  </div>
-
-                  {template.elements
-                    .sort((a, b) => a.zIndex - b.zIndex)
-                    .map((element) => (
-                      <div
-                        key={element.id}
-                        className={`absolute cursor-move ${selectedElement === element.id ? "outline outline-2 outline-blue-500 outline-offset-2" : ""}`}
-                        style={{
-                          left: `${element.x}px`,
-                          top: `${element.y}px`,
-                          zIndex: element.zIndex,
-                          transform: getTransform(element),
-                          opacity: element.opacity / 100,
-                        }}
-                        onMouseDown={(e) => handleMouseDown(e, element.id)}
-                      >
-                        {element.type === "qrcode" && (
-                          <div
-                            style={{
-                              background: element.qrBackgroundTransparent ? "transparent" : element.qrBackgroundColor,
-                              backgroundImage: element.qrBackgroundImage
-                                ? `url(${element.qrBackgroundImage})`
-                                : undefined,
-                              backgroundSize: "cover",
-                              backgroundPosition: "center",
-                              padding: "8px",
-                              display: "inline-block",
-                            }}
-                          >
-                            {qrCodeDataUrl && (
-                              <img
-                                src={qrCodeDataUrl || "/placeholder.svg"}
-                                alt="QR Code"
-                                style={{ width: element.size, height: element.size }}
-                              />
-                            )}
-                          </div>
-                        )}
-                        {element.type === "text" && (
-                          <div
-                            style={{
-                              fontSize: `${element.fontSize}px`,
-                              color: element.color,
-                              whiteSpace: "nowrap",
-                              fontWeight: element.fontWeight,
-                              textAlign: element.textAlign,
-                            }}
-                          >
-                            {element.content}
-                          </div>
-                        )}
-                        {element.type === "image" && element.imageUrl && (
-                          <img
-                            src={element.imageUrl || "/placeholder.svg"}
-                            alt="Element"
-                            style={{
-                              width: `${element.width}px`,
-                              height: `${element.height}px`,
-                              objectFit: "contain",
-                            }}
-                          />
-                        )}
-                      </div>
-                    ))}
-
+            <CardContent className="space-y-6">
+              {/* First page (Front) */}
+              <div className="space-y-2">
+                <div className="overflow-x-auto">
                   <div
-                    className="absolute bottom-2 left-0 right-0 text-center z-[10000] pointer-events-none"
+                    ref={canvasRef}
+                    className="relative border-2 border-dashed border-border rounded-lg overflow-hidden cursor-crosshair mx-auto"
                     style={{
-                      fontSize: `${template.domainFontSize}px`,
-                      color: template.domainColor,
+                      width: `${CANVAS_WIDTH}px`,
+                      height: `${CANVAS_HEIGHT}px`,
+                      minWidth: `${CANVAS_WIDTH}px`,
+                      background: template.background,
+                      backgroundImage: template.backgroundImage ? `url(${template.backgroundImage})` : undefined,
+                      backgroundSize: `${template.backgroundScale}%`,
+                      backgroundPosition: `${template.backgroundX}% ${template.backgroundY}%`,
+                      backgroundRepeat: "no-repeat",
                     }}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
                   >
-                    {template.domainText}
+                    <div className="absolute top-2 left-2 bg-blue-600 text-white px-3 py-1 rounded text-sm z-[30000]">
+                      Strona 1 (Przód)
+                    </div>
+
+                    {template.elements
+                      .sort((a, b) => a.zIndex - b.zIndex)
+                      .map((element) => (
+                        <div
+                          key={element.id}
+                          className={`absolute cursor-move ${selectedElement === element.id ? "outline outline-2 outline-blue-500 outline-offset-2" : ""}`}
+                          style={{
+                            left: `${element.x}px`,
+                            top: `${element.y}px`,
+                            zIndex: element.zIndex,
+                            transform: getTransform(element),
+                            opacity: element.opacity / 100,
+                          }}
+                          onMouseDown={(e) => handleMouseDown(e, element.id)}
+                        >
+                          {element.type === "qrcode" && (
+                            <div
+                              style={{
+                                background: element.qrBackgroundTransparent ? "transparent" : element.qrBackgroundColor,
+                                backgroundImage: element.qrBackgroundImage
+                                  ? `url(${element.qrBackgroundImage})`
+                                  : undefined,
+                                backgroundSize: "cover",
+                                backgroundPosition: "center",
+                                padding: "8px",
+                                display: "inline-block",
+                              }}
+                            >
+                              {qrCodeDataUrl && (
+                                <img
+                                  src={qrCodeDataUrl || "/placeholder.svg"}
+                                  alt="QR Code"
+                                  style={{ width: element.size, height: element.size }}
+                                />
+                              )}
+                            </div>
+                          )}
+                          {element.type === "text" && (
+                            <div
+                              style={{
+                                fontSize: `${element.fontSize}px`,
+                                color: element.color,
+                                whiteSpace: "nowrap",
+                                fontWeight: element.fontWeight,
+                                textAlign: element.textAlign,
+                              }}
+                            >
+                              {element.content}
+                            </div>
+                          )}
+                          {element.type === "image" && element.imageUrl && (
+                            <img
+                              src={element.imageUrl || "/placeholder.svg"}
+                              alt="Element"
+                              style={{
+                                width: `${element.width}px`,
+                                height: `${element.height}px`,
+                                objectFit: "contain",
+                              }}
+                            />
+                          )}
+                        </div>
+                      ))}
+
+                    <div
+                      className="absolute bottom-2 left-0 right-0 text-center z-[10000] pointer-events-none"
+                      style={{
+                        fontSize: `${template.domainFontSize}px`,
+                        color: template.domainColor,
+                      }}
+                    >
+                      {template.domainText}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-4 border-t-2 border-dashed pt-4">
-                <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground mb-4">
-                  <div className="h-px flex-1 bg-border" />
-                  <span>⬇ Linia zgięcia - Druga strona (Tył) ⬇</span>
-                  <div className="h-px flex-1 bg-border" />
-                </div>
+              {/* Fold line */}
+              <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
+                <div className="h-px flex-1 bg-border" />
+                <span>⬇ Linia zgięcia - Druga strona (Tył) ⬇</span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
 
-                <div
-                  className="relative mx-auto border-2 border-dashed border-border rounded-lg overflow-hidden"
-                  style={{
-                    width: `${CANVAS_WIDTH}px`,
-                    height: `${CANVAS_HEIGHT}px`,
-                    maxWidth: "100%",
-                    background: template.background,
-                    backgroundImage: template.backgroundImage ? `url(${template.backgroundImage})` : undefined,
-                    backgroundSize: `${template.backgroundScale}%`,
-                    backgroundPosition: `${100 - template.backgroundX}% ${template.backgroundY}%`,
-                    backgroundRepeat: "no-repeat",
-                    transform: "scaleX(-1)",
-                  }}
-                >
+              {/* Second page (Back) - Mirrored */}
+              <div className="space-y-2">
+                <div className="overflow-x-auto">
                   <div
-                    className="absolute top-2 left-2 bg-purple-600 text-white px-3 py-1 rounded text-sm z-[30000]"
-                    style={{ transform: "scaleX(-1)" }}
+                    className="relative border-2 border-dashed border-border rounded-lg overflow-hidden mx-auto"
+                    style={{
+                      width: `${CANVAS_WIDTH}px`,
+                      height: `${CANVAS_HEIGHT}px`,
+                      minWidth: `${CANVAS_WIDTH}px`,
+                      background: template.background,
+                      backgroundImage: template.backgroundImage ? `url(${template.backgroundImage})` : undefined,
+                      backgroundSize: `${template.backgroundScale}%`,
+                      backgroundPosition: `${100 - template.backgroundX}% ${template.backgroundY}%`,
+                      backgroundRepeat: "no-repeat",
+                    }}
                   >
-                    Strona 2 (Tył - odbicie)
-                  </div>
+                    <div
+                      className="absolute top-2 left-2 bg-purple-600 text-white px-3 py-1 rounded text-sm z-[30000]"
+                      style={{ transform: "scaleX(-1)" }}
+                    >
+                      Strona 2 (Tył - odbicie)
+                    </div>
 
-                  {template.elements
-                    .sort((a, b) => a.zIndex - b.zIndex)
-                    .map((element) => (
-                      <div
-                        key={`mirror-${element.id}`}
-                        className="absolute pointer-events-none"
-                        style={{
-                          left: `${element.x}px`,
-                          top: `${element.y}px`,
-                          zIndex: element.zIndex,
-                          transform: getTransform(element),
-                          opacity: element.opacity / 100,
-                        }}
-                      >
-                        {element.type === "qrcode" && (
+                    {template.elements
+                      .sort((a, b) => a.zIndex - b.zIndex)
+                      .map((element) => {
+                        const elementWidth =
+                          element.type === "qrcode"
+                            ? element.size || 150
+                            : element.type === "image"
+                              ? element.width || 100
+                              : 100
+                        const mirroredX = CANVAS_WIDTH - element.x - elementWidth
+
+                        const transforms = []
+                        if (element.scale !== 100) transforms.push(`scale(${element.scale / 100})`)
+                        if (element.rotation) transforms.push(`rotate(${element.rotation}deg)`)
+                        transforms.push("scaleX(-1)") // Only one horizontal flip for mirror effect
+                        if (element.flipVertical) transforms.push("scaleY(-1)")
+
+                        return (
                           <div
+                            key={`mirror-${element.id}`}
+                            className="absolute pointer-events-none"
                             style={{
-                              background: element.qrBackgroundTransparent ? "transparent" : element.qrBackgroundColor,
-                              backgroundImage: element.qrBackgroundImage
-                                ? `url(${element.qrBackgroundImage})`
-                                : undefined,
-                              backgroundSize: "cover",
-                              backgroundPosition: "center",
-                              padding: "8px",
-                              display: "inline-block",
+                              left: `${mirroredX}px`,
+                              top: `${element.y}px`,
+                              zIndex: element.zIndex,
+                              transform: transforms.join(" "),
+                              opacity: element.opacity / 100,
                             }}
                           >
-                            {qrCodeDataUrl && (
+                            {element.type === "qrcode" && (
+                              <div
+                                style={{
+                                  background: element.qrBackgroundTransparent
+                                    ? "transparent"
+                                    : element.qrBackgroundColor,
+                                  backgroundImage: element.qrBackgroundImage
+                                    ? `url(${element.qrBackgroundImage})`
+                                    : undefined,
+                                  backgroundSize: "cover",
+                                  backgroundPosition: "center",
+                                  padding: "8px",
+                                  display: "inline-block",
+                                }}
+                              >
+                                {qrCodeDataUrl && (
+                                  <img
+                                    src={qrCodeDataUrl || "/placeholder.svg"}
+                                    alt="QR Code"
+                                    style={{ width: element.size, height: element.size }}
+                                  />
+                                )}
+                              </div>
+                            )}
+                            {element.type === "text" && (
+                              <div
+                                style={{
+                                  fontSize: `${element.fontSize}px`,
+                                  color: element.color,
+                                  whiteSpace: "nowrap",
+                                  fontWeight: element.fontWeight,
+                                  textAlign:
+                                    element.textAlign === "left"
+                                      ? "right"
+                                      : element.textAlign === "right"
+                                        ? "left"
+                                        : "center",
+                                }}
+                              >
+                                {element.content}
+                              </div>
+                            )}
+                            {element.type === "image" && element.imageUrl && (
                               <img
-                                src={qrCodeDataUrl || "/placeholder.svg"}
-                                alt="QR Code"
-                                style={{ width: element.size, height: element.size }}
+                                src={element.imageUrl || "/placeholder.svg"}
+                                alt="Element"
+                                style={{
+                                  width: `${element.width}px`,
+                                  height: `${element.height}px`,
+                                  objectFit: "contain",
+                                }}
                               />
                             )}
                           </div>
-                        )}
-                        {element.type === "text" && (
-                          <div
-                            style={{
-                              fontSize: `${element.fontSize}px`,
-                              color: element.color,
-                              whiteSpace: "nowrap",
-                              fontWeight: element.fontWeight,
-                              textAlign: element.textAlign,
-                            }}
-                          >
-                            {element.content}
-                          </div>
-                        )}
-                        {element.type === "image" && element.imageUrl && (
-                          <img
-                            src={element.imageUrl || "/placeholder.svg"}
-                            alt="Element"
-                            style={{
-                              width: `${element.width}px`,
-                              height: `${element.height}px`,
-                              objectFit: "contain",
-                            }}
-                          />
-                        )}
-                      </div>
-                    ))}
+                        )
+                      })}
 
-                  <div
-                    className="absolute bottom-2 left-0 right-0 text-center z-[10000]"
-                    style={{
-                      fontSize: `${template.domainFontSize}px`,
-                      color: template.domainColor,
-                    }}
-                  >
-                    {template.domainText}
+                    <div
+                      className="absolute bottom-2 left-0 right-0 text-center z-[10000] pointer-events-none"
+                      style={{
+                        fontSize: `${template.domainFontSize}px`,
+                        color: template.domainColor,
+                        transform: "scaleX(-1)",
+                      }}
+                    >
+                      {template.domainText}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <p className="text-xs text-muted-foreground mt-4 text-center bg-blue-50 p-3 rounded">
+              <p className="text-xs text-muted-foreground text-center bg-blue-50 p-3 rounded">
                 💡 Wskazówka: Po wydrukowaniu zegnij kartkę A4 na pół po linii zgięcia. Strona 1 i Strona 2 będą się
                 idealnie pokrywać!
               </p>
@@ -853,7 +892,7 @@ export function QRTemplateGeneratorAdvanced({ event }: QRTemplateGeneratorAdvanc
         </div>
 
         {/* Right Sidebar - Element Editor */}
-        <Card className="w-full lg:w-auto">
+        <Card className="w-full lg:w-80 lg:flex-shrink-0">
           <CardHeader>
             <CardTitle>Użyte elementy</CardTitle>
           </CardHeader>
@@ -1305,7 +1344,7 @@ export function QRTemplateGeneratorAdvanced({ event }: QRTemplateGeneratorAdvanc
             <CardTitle>Zapisane szablony</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {savedTemplates.map((t) => (
                 <Card key={t.id}>
                   <CardContent className="pt-6">

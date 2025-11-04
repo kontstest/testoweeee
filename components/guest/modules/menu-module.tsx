@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { createClient } from "@/lib/supabase/client"
 import { UtensilsCrossed, Wine, Cake, Coffee } from "lucide-react"
+import { translations } from "@/lib/i18n/translations"
 import type { MenuItem } from "@/lib/types/database"
+import { useLanguage } from "@/lib/hooks/use-language"
 
 interface MenuModuleProps {
   eventId: string
@@ -13,13 +15,15 @@ interface MenuModuleProps {
 }
 
 export function MenuModule({ eventId, primaryColor }: MenuModuleProps) {
+  const { language } = useLanguage()
   const [items, setItems] = useState<MenuItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const supabase = createClient()
+  const t = translations[language].modules.menu
 
   useEffect(() => {
     loadMenu()
-  }, [eventId])
+  }, [eventId, language])
 
   const loadMenu = async () => {
     setIsLoading(true)
@@ -53,18 +57,13 @@ export function MenuModule({ eventId, primaryColor }: MenuModuleProps) {
   }
 
   const getCategoryLabel = (category: string) => {
-    switch (category) {
-      case "appetizer":
-        return "Appetizers"
-      case "main":
-        return "Main Courses"
-      case "dessert":
-        return "Desserts"
-      case "drink":
-        return "Drinks"
-      default:
-        return category
+    const labels: Record<string, string> = {
+      appetizer: t.appetizers,
+      main: t.mainCourses,
+      dessert: t.desserts,
+      drink: t.drinks,
     }
+    return labels[category] || category
   }
 
   const categories = ["appetizer", "main", "dessert", "drink"]
@@ -74,8 +73,11 @@ export function MenuModule({ eventId, primaryColor }: MenuModuleProps) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading menu...</p>
+          <div
+            className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4"
+            style={{ borderTopColor: primaryColor }}
+          ></div>
+          <p className="text-muted-foreground">{t.loading}</p>
         </div>
       </div>
     )
@@ -86,8 +88,8 @@ export function MenuModule({ eventId, primaryColor }: MenuModuleProps) {
       <Card>
         <CardContent className="py-12 text-center">
           <UtensilsCrossed className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-lg font-semibold mb-2">No Menu Available</h3>
-          <p className="text-muted-foreground">The event organizer hasn't added a menu yet.</p>
+          <h3 className="text-lg font-semibold mb-2">{t.noMenu}</h3>
+          <p className="text-muted-foreground">{t.notAdded}</p>
         </CardContent>
       </Card>
     )
@@ -96,22 +98,30 @@ export function MenuModule({ eventId, primaryColor }: MenuModuleProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-2">Event Menu</h2>
-        <p className="text-muted-foreground">Discover what's being served</p>
+        <h2 className="text-2xl md:text-3xl font-bold mb-2">{t.title}</h2>
+        <p className="text-muted-foreground">{t.description}</p>
       </div>
 
       {categoriesWithItems.length > 1 ? (
         <Tabs defaultValue={categoriesWithItems[0]} className="w-full">
           <TabsList
-            className="grid w-full"
-            style={{ gridTemplateColumns: `repeat(${categoriesWithItems.length}, 1fr)` }}
+            className="grid w-full gap-2 h-auto p-2 bg-transparent"
+            style={{ gridTemplateColumns: `repeat(auto-fit, minmax(120px, 1fr))` }}
           >
             {categoriesWithItems.map((category) => {
               const Icon = getCategoryIcon(category)
               return (
-                <TabsTrigger key={category} value={category}>
-                  <Icon className="w-4 h-4 mr-2" />
-                  {getCategoryLabel(category)}
+                <TabsTrigger
+                  key={category}
+                  value={category}
+                  className="flex-col sm:flex-row gap-1 px-2 sm:px-4 py-2 sm:py-3"
+                  style={{
+                    backgroundColor: `${primaryColor}05`,
+                    borderColor: `${primaryColor}20`,
+                  }}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="text-xs sm:text-sm">{getCategoryLabel(category)}</span>
                 </TabsTrigger>
               )
             })}
@@ -119,21 +129,26 @@ export function MenuModule({ eventId, primaryColor }: MenuModuleProps) {
 
           {categoriesWithItems.map((category) => (
             <TabsContent key={category} value={category} className="mt-6">
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {items
                   .filter((item) => item.category === category)
-                  .map((item) => (
-                    <Card key={item.id}>
-                      <CardHeader>
-                        <CardTitle className="text-lg">{item.name}</CardTitle>
-                      </CardHeader>
-                      {item.description && (
-                        <CardContent>
-                          <p className="text-muted-foreground">{item.description}</p>
-                        </CardContent>
-                      )}
-                    </Card>
-                  ))}
+                  .map((item) => {
+                    const displayName = language === "en" && item.name_en ? item.name_en : item.name
+                    const displayDescription =
+                      language === "en" && item.description_en ? item.description_en : item.description
+                    return (
+                      <Card key={item.id} style={{ borderColor: `${primaryColor}20` }}>
+                        <CardHeader>
+                          <CardTitle className="text-lg">{displayName}</CardTitle>
+                        </CardHeader>
+                        {displayDescription && (
+                          <CardContent>
+                            <p className="text-muted-foreground text-sm">{displayDescription}</p>
+                          </CardContent>
+                        )}
+                      </Card>
+                    )
+                  })}
               </div>
             </TabsContent>
           ))}
@@ -153,21 +168,26 @@ export function MenuModule({ eventId, primaryColor }: MenuModuleProps) {
                   </div>
                   <h3 className="text-xl font-semibold">{getCategoryLabel(category)}</h3>
                 </div>
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {items
                     .filter((item) => item.category === category)
-                    .map((item) => (
-                      <Card key={item.id}>
-                        <CardHeader>
-                          <CardTitle className="text-lg">{item.name}</CardTitle>
-                        </CardHeader>
-                        {item.description && (
-                          <CardContent>
-                            <p className="text-muted-foreground">{item.description}</p>
-                          </CardContent>
-                        )}
-                      </Card>
-                    ))}
+                    .map((item) => {
+                      const displayName = language === "en" && item.name_en ? item.name_en : item.name
+                      const displayDescription =
+                        language === "en" && item.description_en ? item.description_en : item.description
+                      return (
+                        <Card key={item.id} style={{ borderColor: `${primaryColor}20` }}>
+                          <CardHeader>
+                            <CardTitle className="text-lg">{displayName}</CardTitle>
+                          </CardHeader>
+                          {displayDescription && (
+                            <CardContent>
+                              <p className="text-muted-foreground text-sm">{displayDescription}</p>
+                            </CardContent>
+                          )}
+                        </Card>
+                      )
+                    })}
                 </div>
               </div>
             )

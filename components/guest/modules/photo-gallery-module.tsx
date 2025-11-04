@@ -11,6 +11,8 @@ import { Upload, ImageIcon, X, Check, Heart, User } from "lucide-react"
 import type { Photo } from "@/lib/types/database"
 import { useDropzone } from "react-dropzone"
 import { cn } from "@/lib/utils"
+import { translations } from "@/lib/i18n/translations"
+import { useLanguage } from "@/lib/hooks/use-language"
 
 interface PhotoGalleryModuleProps {
   eventId: string
@@ -26,6 +28,7 @@ interface PendingPhoto {
 }
 
 export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModuleProps) {
+  const { language } = useLanguage()
   const [photos, setPhotos] = useState<Photo[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
@@ -33,6 +36,7 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
   const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([])
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
   const supabase = createClient()
+  const t = translations[language].modules.photoGallery
 
   useEffect(() => {
     loadPhotos()
@@ -139,33 +143,41 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
     <div className="space-y-8">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-3xl font-bold mb-2">Photo Gallery</h2>
-          <p className="text-gray-600 text-lg">Share your favorite moments and wishes</p>
+          <h2 className="text-3xl font-bold mb-2">{t.title}</h2>
+          <p className="text-gray-600 text-lg">{t.description}</p>
         </div>
         <Button
           onClick={() => setIsUploadDialogOpen(true)}
           size="lg"
-          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl transition-all"
+          className="text-white shadow-lg hover:shadow-xl transition-all"
+          style={{ backgroundColor: primaryColor }}
         >
           <Upload className="w-5 h-5 mr-2" />
-          Upload Photos
+          {t.uploadButton}
         </Button>
       </div>
 
       {photos.length === 0 ? (
-        <Card className="border-2 border-dashed border-gray-300 bg-gradient-to-br from-gray-50 to-white">
+        <Card
+          className="border-2 border-dashed"
+          style={{ borderColor: `${primaryColor}40`, backgroundColor: `${primaryColor}05` }}
+        >
           <CardContent className="py-20 text-center">
-            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
-              <ImageIcon className="w-12 h-12 text-purple-600" />
+            <div
+              className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: `${primaryColor}20` }}
+            >
+              <ImageIcon className="w-12 h-12" style={{ color: primaryColor }} />
             </div>
-            <h3 className="text-2xl font-bold mb-3">No photos yet</h3>
-            <p className="text-gray-600 mb-6 text-lg">Be the first to share a memory!</p>
+            <h3 className="text-2xl font-bold mb-3">{t.noPhotos}</h3>
+            <p className="text-gray-600 mb-6 text-lg">{t.beFirst}</p>
             <Button
               onClick={() => setIsUploadDialogOpen(true)}
               size="lg"
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              style={{ backgroundColor: primaryColor }}
+              className="text-white"
             >
-              Upload First Photo
+              {t.uploadFirst}
             </Button>
           </CardContent>
         </Card>
@@ -176,10 +188,9 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
               key={photo.id}
               className={cn(
                 "group cursor-pointer overflow-hidden hover:shadow-2xl transition-all duration-500",
-                "bg-white border-2 border-gray-100 hover:border-purple-200 hover:-translate-y-2",
-                "animate-fade-in-up",
+                "bg-white hover:-translate-y-2",
               )}
-              style={{ animationDelay: `${index * 50}ms` }}
+              style={{ borderColor: `${primaryColor}20`, borderWidth: "2px" }}
               onClick={() => setSelectedPhoto(photo)}
             >
               <div className="aspect-square relative overflow-hidden">
@@ -188,7 +199,6 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
                   alt={photo.caption || "Event photo"}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
               {(photo.caption || photo.wishes || photo.author_name) && (
                 <CardContent className="p-4 space-y-2">
@@ -210,28 +220,35 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
       <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl">Share Your Memories</DialogTitle>
+            <DialogTitle className="text-2xl">{t.uploadButton}</DialogTitle>
           </DialogHeader>
           <div className="space-y-6">
             <div
               {...getRootProps()}
               className={cn(
                 "border-3 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all duration-300",
-                isDragActive
-                  ? "border-purple-500 bg-purple-50 scale-105"
-                  : "border-gray-300 hover:border-purple-400 hover:bg-purple-50/50",
+                isDragActive ? "scale-105" : "hover:opacity-80",
               )}
+              style={{
+                borderColor: isDragActive ? primaryColor : `${primaryColor}40`,
+                backgroundColor: isDragActive ? `${primaryColor}10` : `${primaryColor}05`,
+              }}
             >
               <input {...getInputProps()} />
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
-                <Upload className="w-10 h-10 text-purple-600" />
+              <div
+                className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: `${primaryColor}20` }}
+              >
+                <Upload className="w-10 h-10" style={{ color: primaryColor }} />
               </div>
               {isDragActive ? (
-                <p className="text-xl font-semibold text-purple-600">Drop your photos here...</p>
+                <p className="text-xl font-semibold" style={{ color: primaryColor }}>
+                  {t.dragDrop}...
+                </p>
               ) : (
                 <>
-                  <p className="text-xl font-semibold mb-2">Drag & drop your photos</p>
-                  <p className="text-gray-500">or click to browse your files</p>
+                  <p className="text-xl font-semibold mb-2">{t.dragDrop}</p>
+                  <p className="text-gray-500">{t.orClick}</p>
                 </>
               )}
             </div>
@@ -244,10 +261,11 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
                     onClick={handleUploadAll}
                     disabled={isUploading}
                     size="lg"
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                    style={{ backgroundColor: primaryColor }}
+                    className="text-white"
                   >
                     <Check className="w-5 h-5 mr-2" />
-                    {isUploading ? "Uploading..." : "Confirm Upload"}
+                    {isUploading ? t.uploading : t.confirmUpload}
                   </Button>
                 </div>
                 <div className="space-y-6">
@@ -273,10 +291,10 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
                           <div>
                             <Label className="text-sm font-medium mb-2 flex items-center gap-2">
                               <ImageIcon className="w-4 h-4" />
-                              Photo Caption (Optional)
+                              {t.caption}
                             </Label>
                             <Input
-                              placeholder="Describe this moment..."
+                              placeholder={t.caption}
                               value={photo.caption}
                               onChange={(e) => updatePendingPhoto(index, "caption", e.target.value)}
                               className="text-base"
@@ -285,10 +303,10 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
                           <div>
                             <Label className="text-sm font-medium mb-2 flex items-center gap-2">
                               <Heart className="w-4 h-4" />
-                              Your Wishes (Optional)
+                              {t.wishes}
                             </Label>
                             <Textarea
-                              placeholder="Share your wishes and blessings..."
+                              placeholder={t.wishes}
                               value={photo.wishes}
                               onChange={(e) => updatePendingPhoto(index, "wishes", e.target.value)}
                               className="text-base min-h-[100px]"
@@ -297,10 +315,10 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
                           <div>
                             <Label className="text-sm font-medium mb-2 flex items-center gap-2">
                               <User className="w-4 h-4" />
-                              Your Name (Optional)
+                              {t.yourName}
                             </Label>
                             <Input
-                              placeholder="From..."
+                              placeholder={t.yourName}
                               value={photo.authorName}
                               onChange={(e) => updatePendingPhoto(index, "authorName", e.target.value)}
                               className="text-base"
@@ -331,15 +349,15 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
               <div className="space-y-4">
                 {selectedPhoto.caption && (
                   <div>
-                    <h3 className="text-lg font-semibold mb-1">Caption</h3>
+                    <h3 className="text-lg font-semibold mb-1">{t.caption}</h3>
                     <p className="text-gray-700">{selectedPhoto.caption}</p>
                   </div>
                 )}
                 {selectedPhoto.wishes && (
-                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-lg">
+                  <div className="p-4 rounded-lg" style={{ backgroundColor: `${primaryColor}10` }}>
                     <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-                      <Heart className="w-5 h-5 text-pink-500" />
-                      Wishes
+                      <Heart className="w-5 h-5" style={{ color: primaryColor }} />
+                      {t.wishes}
                     </h3>
                     <p className="text-gray-700 italic">"{selectedPhoto.wishes}"</p>
                   </div>

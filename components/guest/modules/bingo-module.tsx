@@ -10,6 +10,8 @@ import { GuestAuthDialog } from "../guest-auth-dialog"
 import { Trophy, CheckCircle2 } from "lucide-react"
 import type { BingoCard, BingoProgress } from "@/lib/types/database"
 import { cn } from "@/lib/utils"
+import { translations } from "@/lib/i18n/translations"
+import { useLanguage } from "@/lib/hooks/use-language"
 
 interface BingoModuleProps {
   eventId: string
@@ -17,6 +19,7 @@ interface BingoModuleProps {
 }
 
 export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
+  const { language } = useLanguage()
   const [bingoCard, setBingoCard] = useState<BingoCard | null>(null)
   const [progress, setProgress] = useState<BingoProgress | null>(null)
   const [completedItems, setCompletedItems] = useState<number[]>([])
@@ -24,10 +27,11 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
   const [showAuthDialog, setShowAuthDialog] = useState(false)
   const { user } = useGuestAuth()
   const supabase = createClient()
+  const t = translations[language].modules.bingo
 
   useEffect(() => {
     loadBingo()
-  }, [eventId, user])
+  }, [eventId, user, language])
 
   const loadBingo = async () => {
     setIsLoading(true)
@@ -134,8 +138,11 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading bingo...</p>
+          <div
+            className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4"
+            style={{ borderTopColor: primaryColor }}
+          ></div>
+          <p className="text-muted-foreground">{t.loading}</p>
         </div>
       </div>
     )
@@ -145,14 +152,13 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
     return (
       <Card>
         <CardContent className="py-12 text-center">
-          <h3 className="text-lg font-semibold mb-2">No Bingo Game Available</h3>
-          <p className="text-muted-foreground">The event organizer hasn't created a bingo game yet.</p>
+          <h3 className="text-lg md:text-3xl font-semibold mb-2">{bingoCard.title}</h3>
+          <p className="text-muted-foreground text-sm md:text-base">{t.description}</p>
         </CardContent>
       </Card>
     )
   }
 
-  // Prepare 5x5 grid (25 items)
   const gridItems = bingoCard.items.slice(0, 25)
   while (gridItems.length < 25) {
     gridItems.push("")
@@ -160,59 +166,69 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-2xl font-bold mb-2">{bingoCard.title}</h2>
-          <p className="text-muted-foreground">Tap items as you spot them during the event!</p>
+          <h2 className="text-2xl md:text-3xl font-bold mb-2">{bingoCard.title}</h2>
+          <p className="text-muted-foreground text-sm md:text-base">{t.description}</p>
         </div>
         {progress?.is_winner && (
-          <div className="flex items-center gap-2 text-yellow-600">
+          <div className="flex items-center gap-2 text-yellow-600 text-lg font-semibold">
             <Trophy className="w-6 h-6" />
-            <span className="font-semibold">Winner!</span>
+            {t.winner}
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-5 gap-2 max-w-2xl mx-auto">
-        {gridItems.map((item, index) => {
-          const isCompleted = completedItems.includes(index)
-          const isFreeSpace = index === 12 // Center square
+      <div className="flex justify-center">
+        <div className="grid grid-cols-5 gap-1 sm:gap-2 w-full max-w-md">
+          {gridItems.map((item, index) => {
+            const isCompleted = completedItems.includes(index)
+            const isFreeSpace = index === 12
 
-          return (
-            <Card
-              key={index}
-              className={cn(
-                "cursor-pointer transition-all hover:shadow-lg aspect-square",
-                isCompleted && "ring-2",
-                isFreeSpace && "bg-muted",
-              )}
-              style={isCompleted ? { ringColor: primaryColor } : undefined}
-              onClick={() => !isFreeSpace && handleItemClick(index)}
-            >
-              <CardContent className="p-2 h-full flex flex-col items-center justify-center text-center">
-                {isFreeSpace ? (
-                  <div>
-                    <Star className="w-6 h-6 mx-auto mb-1" style={{ color: primaryColor }} />
-                    <p className="text-xs font-semibold">FREE</p>
-                  </div>
-                ) : (
-                  <>
-                    <p className="text-xs leading-tight">{item}</p>
-                    {isCompleted && (
-                      <CheckCircle2 className="w-5 h-5 mt-1 flex-shrink-0" style={{ color: primaryColor }} />
-                    )}
-                  </>
+            return (
+              <Card
+                key={index}
+                className={cn(
+                  "cursor-pointer transition-all aspect-square flex items-center justify-center",
+                  isCompleted && "ring-2",
+                  isFreeSpace && "bg-muted",
                 )}
-              </CardContent>
-            </Card>
-          )
-        })}
+                style={{
+                  ringColor: isCompleted ? primaryColor : undefined,
+                  borderColor: `${primaryColor}20`,
+                }}
+                onClick={() => !isFreeSpace && handleItemClick(index)}
+              >
+                <CardContent className="p-2 h-full flex flex-col items-center justify-center text-center">
+                  {isFreeSpace ? (
+                    <div>
+                      <Star className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1" style={{ color: primaryColor }} />
+                      <p className="text-xs font-semibold">{t.free}</p>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-xs sm:text-sm leading-tight px-1">
+                        {translations[language].bingoItems[item] || item}
+                      </p>
+                      {isCompleted && (
+                        <CheckCircle2
+                          className="w-4 h-4 sm:w-5 sm:h-5 mt-1 flex-shrink-0"
+                          style={{ color: primaryColor }}
+                        />
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
       </div>
 
       <div className="text-center text-sm text-muted-foreground">
-        <p>Complete 5 in a row (horizontal, vertical, or diagonal) to win!</p>
+        <p>{t.complete5}</p>
         <p className="mt-1">
-          Progress: {completedItems.length} / {gridItems.filter((_, i) => i !== 12).length} items
+          {t.progress}: {completedItems.length} / {gridItems.filter((_, i) => i !== 12).length} {t.items}
         </p>
       </div>
 

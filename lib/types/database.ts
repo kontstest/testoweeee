@@ -43,6 +43,7 @@ export interface Event {
   module_vendors_visible: boolean
   custom_css: string | null // Added custom CSS field for advanced settings
   custom_js: string | null // Added custom JavaScript field for advanced settings
+  guest_template: string | null // Added guest template selection field
   created_at: string
   updated_at: string
 }

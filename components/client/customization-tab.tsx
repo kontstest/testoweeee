@@ -11,6 +11,7 @@ import type { Event } from "@/lib/types/database"
 import { Upload, MoveHorizontal, MoveVertical, ImageIcon } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
 import { GuestEventPage } from "@/components/guest/guest-event-page"
+import { toast } from "sonner"
 
 interface CustomizationTabProps {
   event: Event
@@ -132,10 +133,10 @@ export function CustomizationTab({ event, onUpdate }: CustomizationTabProps) {
       if (error) throw error
 
       onUpdate()
-      alert("Customization saved successfully!")
+      toast.success("Customization saved successfully!")
     } catch (error) {
       console.error("[v0] Error saving customization:", error)
-      alert("Failed to save customization")
+      toast.error("Failed to save customization")
     } finally {
       setIsLoading(false)
     }
@@ -164,19 +165,20 @@ export function CustomizationTab({ event, onUpdate }: CustomizationTabProps) {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="primaryColor">Kolor Główny (Primary)</Label>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   id="primaryColor"
                   type="color"
                   value={primaryColor}
                   onChange={(e) => setPrimaryColor(e.target.value)}
-                  className="w-20 h-10"
+                  className="w-full sm:w-20 h-10"
                 />
                 <Input
                   type="text"
                   value={primaryColor}
                   onChange={(e) => setPrimaryColor(e.target.value)}
                   placeholder="#9333ea"
+                  className="flex-1"
                 />
               </div>
               <p className="text-sm text-muted-foreground">Używany dla głównego contentu i tła</p>
@@ -184,19 +186,20 @@ export function CustomizationTab({ event, onUpdate }: CustomizationTabProps) {
 
             <div className="space-y-2">
               <Label htmlFor="secondaryColor">Kolor Akcentu (Secondary)</Label>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   id="secondaryColor"
                   type="color"
                   value={secondaryColor}
                   onChange={(e) => setSecondaryColor(e.target.value)}
-                  className="w-20 h-10"
+                  className="w-full sm:w-20 h-10"
                 />
                 <Input
                   type="text"
                   value={secondaryColor}
                   onChange={(e) => setSecondaryColor(e.target.value)}
                   placeholder="#ec4899"
+                  className="flex-1"
                 />
               </div>
               <p className="text-sm text-muted-foreground">Używany dla ramek, przycisków i tekstu</p>
@@ -204,24 +207,23 @@ export function CustomizationTab({ event, onUpdate }: CustomizationTabProps) {
 
             <div className="space-y-2">
               <Label htmlFor="contentBackgroundColor">Kolor Tła Contentu</Label>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   id="contentBackgroundColor"
                   type="color"
                   value={contentBackgroundColor}
                   onChange={(e) => setContentBackgroundColor(e.target.value)}
-                  className="w-20 h-10"
+                  className="w-full sm:w-20 h-10"
                 />
                 <Input
                   type="text"
                   value={contentBackgroundColor}
                   onChange={(e) => setContentBackgroundColor(e.target.value)}
                   placeholder="#ffffff"
+                  className="flex-1"
                 />
               </div>
-              <p className="text-sm text-muted-foreground">
-                Kolor tła głównego kontenera 
-              </p>
+              <p className="text-sm text-muted-foreground">Kolor tła głównego kontenera</p>
             </div>
           </div>
         </div>
@@ -393,8 +395,8 @@ export function CustomizationTab({ event, onUpdate }: CustomizationTabProps) {
             <h3 className="text-lg font-semibold">Podgląd Na Żywo</h3>
             <span className="text-sm text-muted-foreground">Widok gościa</span>
           </div>
-<div className="relative border-2 border-border rounded-xl bg-white shadow-lg overflow-auto h-[90vh]">
-  <div className="scale-[0.85] origin-top-left transform w-[125%]">
+          <div className="relative border-2 border-border rounded-xl bg-white shadow-lg overflow-auto h-[90vh]">
+            <div className="scale-[0.85] origin-top-left transform w-[125%]">
               <GuestEventPage event={previewEvent} />
             </div>
           </div>

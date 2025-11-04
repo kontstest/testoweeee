@@ -53,6 +53,7 @@ export function VendorsTab({ eventId }: VendorsTabProps) {
     price: "",
     deposit_paid: "",
     notes: "",
+    notes_en: "",
     status: "pending" as const,
   })
 
@@ -94,6 +95,7 @@ export function VendorsTab({ eventId }: VendorsTabProps) {
       price: formData.price ? Number.parseFloat(formData.price) : null,
       deposit_paid: formData.deposit_paid ? Number.parseFloat(formData.deposit_paid) : null,
       notes: formData.notes || null,
+      notes_en: formData.notes_en || null,
       status: formData.status,
     }
 
@@ -140,26 +142,25 @@ export function VendorsTab({ eventId }: VendorsTabProps) {
       price: vendor.price?.toString() || "",
       deposit_paid: vendor.deposit_paid?.toString() || "",
       notes: vendor.notes || "",
+      notes_en: vendor.notes_en || "",
       status: vendor.status,
     })
     setShowForm(true)
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this vendor?")) return
-
-    const { error } = await supabase.from("vendors").delete().eq("id", id)
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete vendor",
-        variant: "destructive",
-      })
-    } else {
-      toast({ title: "Success", description: "Vendor deleted successfully" })
-      fetchVendors()
-    }
+    toast.promise(
+      (async () => {
+        const { error } = await supabase.from("vendors").delete().eq("id", id)
+        if (error) throw error
+        fetchVendors()
+      })(),
+      {
+        loading: "Deleting vendor...",
+        success: "Vendor deleted successfully!",
+        error: "Failed to delete vendor",
+      },
+    )
   }
 
   const resetForm = () => {
@@ -173,6 +174,7 @@ export function VendorsTab({ eventId }: VendorsTabProps) {
       price: "",
       deposit_paid: "",
       notes: "",
+      notes_en: "",
       status: "pending",
     })
     setEditingVendor(null)
@@ -188,7 +190,7 @@ export function VendorsTab({ eventId }: VendorsTabProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h3 className="text-lg font-semibold">Usługodawcy</h3>
           <p className="text-sm text-muted-foreground">Zarządzaj listą usługodawców dla swojego wesela</p>
@@ -346,6 +348,15 @@ export function VendorsTab({ eventId }: VendorsTabProps) {
                   rows={3}
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="notes_en">Notes in English</Label>
+                <Textarea
+                  id="notes_en"
+                  value={formData.notes_en}
+                  onChange={(e) => setFormData({ ...formData, notes_en: e.target.value })}
+                  rows={3}
+                />
+              </div>
               <div className="flex gap-2">
                 <Button type="submit">{editingVendor ? "Zapisz zmiany" : "Dodaj usługodawcę"}</Button>
                 <Button type="button" variant="outline" onClick={resetForm}>
@@ -451,6 +462,12 @@ export function VendorsTab({ eventId }: VendorsTabProps) {
                   <div className="mt-4 text-sm">
                     <span className="font-medium">Notatki:</span>
                     <p className="text-muted-foreground mt-1">{vendor.notes}</p>
+                  </div>
+                )}
+                {vendor.notes_en && (
+                  <div className="mt-4 text-sm">
+                    <span className="font-medium">Notes in English:</span>
+                    <p className="text-muted-foreground mt-1">{vendor.notes_en}</p>
                   </div>
                 )}
               </CardContent>

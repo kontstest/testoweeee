@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { createClient } from "@/lib/supabase/client"
+import { toast } from "sonner"
 
 interface GuestAuthDialogProps {
   open: boolean
@@ -72,7 +73,7 @@ export function GuestAuthDialog({ open, onOpenChange, onSuccess, eventId }: Gues
       })
       if (error) throw error
 
-      alert("Please check your email to confirm your account!")
+      toast.success("Please check your email to confirm your account!")
       onOpenChange(false)
     } catch (error: any) {
       setError(error.message)

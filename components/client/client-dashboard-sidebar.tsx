@@ -17,6 +17,8 @@ import {
   Eye,
   X,
   Settings,
+  Zap,
+  BarChart3,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
@@ -34,6 +36,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { generateEventQRCodeUrl, getEventUrl } from "@/lib/utils/qr-code"
 import { QRTemplateGeneratorAdvanced } from "./qr-template-generator-advanced"
 import { AdvancedSettingsTab } from "./advanced-settings-tab"
+import { TemplateSelectorTab } from "./template-selector-tab" // Added import
+import { SurveyResponsesTab } from "./survey-responses-tab" // Added import
 import { cn } from "@/lib/utils"
 
 interface ClientDashboardProps {
@@ -83,6 +87,7 @@ export function ClientDashboardSidebar({ events: initialEvents, userId }: Client
 
   const menuItems = [
     { id: "customization", label: "Personalizacja", icon: Palette, show: true },
+    { id: "templates", label: "Szablony Gościa", icon: Zap, show: true }, // Added template selector
     { id: "modules", label: "Moduły", icon: Eye, show: true },
     { id: "qr-template", label: "Szablon QR", icon: QrCode, show: true },
     { id: "planning", label: "Planowanie", icon: Heart, show: isWedding },
@@ -91,14 +96,17 @@ export function ClientDashboardSidebar({ events: initialEvents, userId }: Client
     { id: "schedule", label: "Harmonogram", icon: Calendar, show: selectedEvent.module_schedule },
     { id: "menu", label: "Menu", icon: MenuIcon, show: selectedEvent.module_menu },
     { id: "survey", label: "Ankiety", icon: MessageSquare, show: selectedEvent.module_survey },
+    { id: "survey-responses", label: "Odpowiedzi", icon: BarChart3, show: selectedEvent.module_survey }, // Added survey responses tab
     { id: "bingo", label: "Bingo", icon: Grid3x3, show: selectedEvent.module_bingo },
-    { id: "advanced", label: "Zaawansowane", icon: Settings, show: true }, // Added advanced settings tab
+    { id: "advanced", label: "Zaawansowane", icon: Settings, show: true },
   ].filter((item) => item.show)
 
   const renderContent = () => {
     switch (activeTab) {
       case "customization":
         return <CustomizationTab event={selectedEvent} onUpdate={refreshEvent} />
+      case "templates": // Added template selector case
+        return <TemplateSelectorTab event={selectedEvent} onUpdate={refreshEvent} />
       case "modules":
         return <ModulesVisibilityTab event={selectedEvent} onUpdate={refreshEvent} />
       case "qr-template":
@@ -115,9 +123,11 @@ export function ClientDashboardSidebar({ events: initialEvents, userId }: Client
         return <MenuTab eventId={selectedEvent.id} />
       case "survey":
         return <SurveyTab eventId={selectedEvent.id} />
+      case "survey-responses":
+        return <SurveyResponsesTab eventId={selectedEvent.id} /> // Added survey responses case
       case "bingo":
         return <BingoTab eventId={selectedEvent.id} />
-      case "advanced": // Added advanced settings case
+      case "advanced":
         return <AdvancedSettingsTab event={selectedEvent} onUpdate={refreshEvent} />
       default:
         return null

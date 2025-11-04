@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useState } from "react"
 import { generateEventQRCodeUrl, getEventUrl } from "@/lib/utils/qr-code"
 import { deleteEvent } from "@/app/actions/admin"
+import { toast } from "sonner"
 
 interface EventsTableProps {
   events: any[]
@@ -20,15 +21,18 @@ export function EventsTable({ events, onRefresh }: EventsTableProps) {
   const router = useRouter()
 
   const handleDelete = async (eventId: string) => {
-    if (!confirm("Are you sure you want to delete this event?")) return
-
-    const result = await deleteEvent(eventId)
-
-    if (result.error) {
-      alert(`Error: ${result.error}`)
-    } else {
-      onRefresh()
-    }
+    toast.promise(
+      (async () => {
+        const result = await deleteEvent(eventId)
+        if (result.error) throw new Error(result.error)
+        onRefresh()
+      })(),
+      {
+        loading: "Deleting event...",
+        success: "Event deleted successfully!",
+        error: (err) => `Error: ${err.message}`,
+      },
+    )
   }
 
   const getStatusColor = (status: string) => {

@@ -46,8 +46,10 @@ export function SurveyTab({ eventId }: SurveyTabProps) {
   const handleAddQuestion = () => {
     const newQuestion: Partial<SurveyQuestion> = {
       question_text: "",
+      question_text_en: "",
       question_type: "text",
       options: null,
+      options_en: null,
       order_index: questions.length,
     }
     setQuestions([...questions, newQuestion])
@@ -66,23 +68,34 @@ export function SurveyTab({ eventId }: SurveyTabProps) {
   const handleAddOption = (questionIndex: number) => {
     const updated = [...questions]
     const options = updated[questionIndex].options || []
+    const options_en = updated[questionIndex].options_en || []
     updated[questionIndex].options = [...options, ""]
+    updated[questionIndex].options_en = [...options_en, ""]
     setQuestions(updated)
   }
 
-  const handleUpdateOption = (questionIndex: number, optionIndex: number, value: string) => {
+  const handleUpdateOption = (questionIndex: number, optionIndex: number, value: string, lang: "en" | "zh") => {
     const updated = [...questions]
     const options = [...(updated[questionIndex].options || [])]
-    options[optionIndex] = value
-    updated[questionIndex].options = options
+    const options_en = [...(updated[questionIndex].options_en || [])]
+    if (lang === "en") {
+      options_en[optionIndex] = value
+      updated[questionIndex].options_en = options_en
+    } else {
+      options[optionIndex] = value
+      updated[questionIndex].options = options
+    }
     setQuestions(updated)
   }
 
   const handleDeleteOption = (questionIndex: number, optionIndex: number) => {
     const updated = [...questions]
     const options = [...(updated[questionIndex].options || [])]
+    const options_en = [...(updated[questionIndex].options_en || [])]
     options.splice(optionIndex, 1)
+    options_en.splice(optionIndex, 1)
     updated[questionIndex].options = options
+    updated[questionIndex].options_en = options_en
     setQuestions(updated)
   }
 
@@ -99,7 +112,9 @@ export function SurveyTab({ eventId }: SurveyTabProps) {
           .insert({
             event_id: eventId,
             title: "Event Survey",
+            title_en: "Event Survey",
             description: "Share your feedback",
+            description_en: "Share your feedback",
             is_active: true,
           })
           .select()
@@ -113,12 +128,14 @@ export function SurveyTab({ eventId }: SurveyTabProps) {
       // Delete existing questions
       await supabase.from("survey_questions").delete().eq("survey_id", surveyId)
 
-      // Insert new questions
+      // Insert new questions with bilingual support
       const questionsToInsert = questions.map((q, index) => ({
         survey_id: surveyId,
         question_text: q.question_text,
+        question_text_en: q.question_text_en || q.question_text,
         question_type: q.question_type,
         options: q.options,
+        options_en: q.options_en || q.options,
         order_index: index,
       }))
 
@@ -157,11 +174,19 @@ export function SurveyTab({ eventId }: SurveyTabProps) {
                 <div className="flex gap-4">
                   <div className="flex-1 space-y-4">
                     <div className="space-y-2">
-                      <Label>Question</Label>
+                      <Label>Question (中文)</Label>
                       <Input
                         placeholder="How would you rate the event?"
                         value={question.question_text}
                         onChange={(e) => handleUpdateQuestion(qIndex, "question_text", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Question (English)</Label>
+                      <Input
+                        placeholder="How would you rate the event?"
+                        value={question.question_text_en || ""}
+                        onChange={(e) => handleUpdateQuestion(qIndex, "question_text_en", e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
@@ -184,7 +209,7 @@ export function SurveyTab({ eventId }: SurveyTabProps) {
                     {question.question_type === "multiple_choice" && (
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <Label>Options</Label>
+                          <Label>Options (中文)</Label>
                           <Button type="button" variant="ghost" size="sm" onClick={() => handleAddOption(qIndex)}>
                             <Plus className="w-4 h-4 mr-1" />
                             Add Option
@@ -196,7 +221,37 @@ export function SurveyTab({ eventId }: SurveyTabProps) {
                               <Input
                                 placeholder={`Option ${oIndex + 1}`}
                                 value={option}
-                                onChange={(e) => handleUpdateOption(qIndex, oIndex, e.target.value)}
+                                onChange={(e) => handleUpdateOption(qIndex, oIndex, e.target.value, "zh")}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteOption(qIndex, oIndex)}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {question.question_type === "multiple_choice" && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label>Options (English)</Label>
+                          <Button type="button" variant="ghost" size="sm" onClick={() => handleAddOption(qIndex)}>
+                            <Plus className="w-4 h-4 mr-1" />
+                            Add Option
+                          </Button>
+                        </div>
+                        <div className="space-y-2">
+                          {(question.options_en || []).map((option, oIndex) => (
+                            <div key={oIndex} className="flex gap-2">
+                              <Input
+                                placeholder={`Option ${oIndex + 1}`}
+                                value={option}
+                                onChange={(e) => handleUpdateOption(qIndex, oIndex, e.target.value, "en")}
                               />
                               <Button
                                 type="button"

@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/client"
 import { Plus, Trash2, GripVertical } from "lucide-react"
 import type { ScheduleItem } from "@/lib/types/database"
+import { toast } from "sonner"
 
 interface ScheduleTabProps {
   eventId: string
@@ -40,7 +41,9 @@ export function ScheduleTab({ eventId }: ScheduleTabProps) {
       event_id: eventId,
       time: "12:00",
       title: "",
+      title_en: "",
       description: "",
+      description_en: "",
       order_index: items.length,
     }
     setItems([...items, newItem as ScheduleItem])
@@ -67,12 +70,14 @@ export function ScheduleTab({ eventId }: ScheduleTabProps) {
       // Delete all existing items
       await supabase.from("schedule_items").delete().eq("event_id", eventId)
 
-      // Insert new items
+      // Insert new items with bilingual support
       const itemsToInsert = items.map((item, index) => ({
         event_id: eventId,
         time: item.time,
         title: item.title,
+        title_en: item.title_en || item.title,
         description: item.description,
+        description_en: item.description_en || item.description,
         order_index: index,
       }))
 
@@ -81,10 +86,10 @@ export function ScheduleTab({ eventId }: ScheduleTabProps) {
       if (error) throw error
 
       await loadSchedule()
-      alert("Schedule saved successfully!")
+      toast.success("Schedule saved successfully!")
     } catch (error) {
       console.error("[v0] Error saving schedule:", error)
-      alert("Failed to save schedule")
+      toast.error("Failed to save schedule")
     } finally {
       setIsLoading(false)
     }
@@ -92,7 +97,7 @@ export function ScheduleTab({ eventId }: ScheduleTabProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h3 className="text-lg font-semibold">Event Schedule</h3>
           <p className="text-sm text-muted-foreground">Add timeline items for your event</p>
@@ -129,14 +134,30 @@ export function ScheduleTab({ eventId }: ScheduleTabProps) {
                         onChange={(e) => handleUpdate(index, "title", e.target.value)}
                       />
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Description (optional)</Label>
-                    <Textarea
-                      placeholder="Additional details..."
-                      value={item.description || ""}
-                      onChange={(e) => handleUpdate(index, "description", e.target.value)}
-                    />
+                    <div className="space-y-2">
+                      <Label>Title (English)</Label>
+                      <Input
+                        placeholder="Ceremony"
+                        value={item.title_en || ""}
+                        onChange={(e) => handleUpdate(index, "title_en", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Description (optional)</Label>
+                      <Textarea
+                        placeholder="Additional details..."
+                        value={item.description || ""}
+                        onChange={(e) => handleUpdate(index, "description", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Description (English) (optional)</Label>
+                      <Textarea
+                        placeholder="Additional details..."
+                        value={item.description_en || ""}
+                        onChange={(e) => handleUpdate(index, "description_en", e.target.value)}
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-start">

@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/client"
 import { Plus, Trash2 } from "lucide-react"
 import type { MenuItem } from "@/lib/types/database"
+import { toast } from "sonner"
 
 interface MenuTabProps {
   eventId: string
@@ -41,7 +42,9 @@ export function MenuTab({ eventId }: MenuTabProps) {
       event_id: eventId,
       category: "main",
       name: "",
+      name_en: "",
       description: "",
+      description_en: "",
       order_index: items.length,
     }
     setItems([...items, newItem as MenuItem])
@@ -68,12 +71,14 @@ export function MenuTab({ eventId }: MenuTabProps) {
       // Delete all existing items
       await supabase.from("menu_items").delete().eq("event_id", eventId)
 
-      // Insert new items
+      // Insert new items with bilingual support
       const itemsToInsert = items.map((item, index) => ({
         event_id: eventId,
         category: item.category,
         name: item.name,
+        name_en: item.name_en || item.name,
         description: item.description,
+        description_en: item.description_en || item.description,
         order_index: index,
       }))
 
@@ -82,10 +87,10 @@ export function MenuTab({ eventId }: MenuTabProps) {
       if (error) throw error
 
       await loadMenu()
-      alert("Menu saved successfully!")
+      toast.success("Menu saved successfully!")
     } catch (error) {
       console.error("[v0] Error saving menu:", error)
-      alert("Failed to save menu")
+      toast.error("Failed to save menu")
     } finally {
       setIsLoading(false)
     }
@@ -93,7 +98,7 @@ export function MenuTab({ eventId }: MenuTabProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h3 className="text-lg font-semibold">Event Menu</h3>
           <p className="text-sm text-muted-foreground">Add food and drink items</p>
@@ -133,14 +138,30 @@ export function MenuTab({ eventId }: MenuTabProps) {
                         onChange={(e) => handleUpdate(index, "name", e.target.value)}
                       />
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Description (optional)</Label>
-                    <Textarea
-                      placeholder="With lemon butter sauce..."
-                      value={item.description || ""}
-                      onChange={(e) => handleUpdate(index, "description", e.target.value)}
-                    />
+                    <div className="space-y-2">
+                      <Label>Name (English)</Label>
+                      <Input
+                        placeholder="Grilled Salmon"
+                        value={item.name_en || ""}
+                        onChange={(e) => handleUpdate(index, "name_en", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Description (optional)</Label>
+                      <Textarea
+                        placeholder="With lemon butter sauce..."
+                        value={item.description || ""}
+                        onChange={(e) => handleUpdate(index, "description", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Description (English) (optional)</Label>
+                      <Textarea
+                        placeholder="With lemon butter sauce..."
+                        value={item.description_en || ""}
+                        onChange={(e) => handleUpdate(index, "description_en", e.target.value)}
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-start">
