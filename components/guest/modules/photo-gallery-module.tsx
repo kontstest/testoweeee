@@ -249,6 +249,7 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
                 <>
                   <p className="text-xl font-semibold mb-2">{t.dragDrop}</p>
                   <p className="text-gray-500">{t.orClick}</p>
+                  <p className="text-sm text-gray-400 mt-2">📱 {t.mobileCamera || "Or use your device camera"}</p>
                 </>
               )}
             </div>

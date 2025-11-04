@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/client"
 import { useGuestAuth } from "@/lib/hooks/use-guest-auth"
 import { GuestAuthDialog } from "../guest-auth-dialog"
-import { Trophy, CheckCircle2 } from "lucide-react"
+import { Trophy, CheckCircle2, Lightbulb } from "lucide-react"
 import type { BingoCard, BingoProgress } from "@/lib/types/database"
 import { cn } from "@/lib/utils"
 import { translations } from "@/lib/i18n/translations"
@@ -152,7 +152,7 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
     return (
       <Card>
         <CardContent className="py-12 text-center">
-          <h3 className="text-lg md:text-3xl font-semibold mb-2">{bingoCard.title}</h3>
+          <h3 className="text-lg md:text-3xl font-semibold mb-2">{bingoCard?.title}</h3>
           <p className="text-muted-foreground text-sm md:text-base">{t.description}</p>
         </CardContent>
       </Card>
@@ -166,9 +166,31 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
 
   return (
     <div className="space-y-6">
+      {bingoCard?.actions && bingoCard.actions.length > 0 && (
+        <div className="bg-gradient-to-r" style={{ backgroundColor: `${primaryColor}10` }}>
+          <div className="p-4 rounded-lg border" style={{ borderColor: `${primaryColor}30` }}>
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: primaryColor }}>
+              <Lightbulb className="w-4 h-4" />
+              {t.actions || "Actions"}
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {bingoCard.actions.map((action, index) => (
+                <div
+                  key={index}
+                  className="text-sm p-2 bg-white rounded border-l-2"
+                  style={{ borderLeftColor: primaryColor }}
+                >
+                  {action}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold mb-2">{bingoCard.title}</h2>
+          <h2 className="text-2xl md:text-3xl font-bold mb-2">{bingoCard?.title}</h2>
           <p className="text-muted-foreground text-sm md:text-base">{t.description}</p>
         </div>
         {progress?.is_winner && (

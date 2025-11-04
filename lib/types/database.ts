@@ -101,6 +101,7 @@ export interface BingoCard {
   event_id: string
   title: string
   items: string[]
+  actions?: string[]
   created_at: string
 }
 
@@ -189,6 +190,26 @@ export interface QRTemplate {
     y: number
     content?: string
   }>
+  created_at: string
+  updated_at: string
+}
+
+export interface PhotoOverlay {
+  id: string
+  event_id: string
+  name: string
+  description: string | null
+  template_type: "simple" | "elegant" | "festive"
+  overlay_svg: string
+  text_positions: Array<{
+    id: string
+    x: number
+    y: number
+    fontSize: number
+    defaultText: string
+  }> | null
+  is_active: boolean
+  order_index: number
   created_at: string
   updated_at: string
 }

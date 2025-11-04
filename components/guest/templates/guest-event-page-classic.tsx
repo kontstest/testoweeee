@@ -2,7 +2,7 @@
 import { useState } from "react"
 import type { Event } from "@/lib/types/database"
 import { Button } from "@/components/ui/button-wedding"
-import { Camera, Upload, Calendar, MenuIcon, Grid3x3, ListChecks, X, Users } from "lucide-react"
+import { Camera, Upload, Calendar, MenuIcon, Grid3x3, ListChecks, X, Users, Sparkles } from "lucide-react"
 import { motion, AnimatePresence } from "motion/react"
 import { PhotoGalleryModule } from "../modules/photo-gallery-module"
 import { ScheduleModule } from "../modules/schedule-module"
@@ -10,6 +10,7 @@ import { MenuModule } from "../modules/menu-module"
 import { SurveyModule } from "../modules/survey-module"
 import { BingoModule } from "../modules/bingo-module"
 import { VendorsModule } from "../modules/vendors-module"
+import { PhotoOverlayModule } from "../modules/photo-overlay-module"
 import { LanguageSwitcher } from "@/components/ui/language-switcher"
 import { useLanguage } from "@/lib/hooks/use-language"
 import { translations } from "@/lib/i18n/translations"
@@ -37,6 +38,15 @@ export function GuestEventPageClassic({ event }: GuestEventPageProps) {
       buttonText: t.uploadButton,
       viewId: "gallery",
       isPrimary: true,
+      enabled: event.module_photo_gallery && event.module_photo_gallery_visible,
+    },
+    {
+      title: t.photoOverlay || "Photo with Template",
+      description: t.photoOverlayDesc || "Add templates to your photos",
+      icon: Sparkles,
+      buttonText: t.photoOverlayButton || "Create",
+      viewId: "photo-overlay",
+      isPrimary: false,
       enabled: event.module_photo_gallery && event.module_photo_gallery_visible,
     },
     {
@@ -278,6 +288,9 @@ export function GuestEventPageClassic({ event }: GuestEventPageProps) {
                   {activeView === "menu" && <MenuModule eventId={event.id} primaryColor={secondaryColor} />}
                   {activeView === "bingo" && <BingoModule eventId={event.id} primaryColor={secondaryColor} />}
                   {activeView === "survey" && <SurveyModule eventId={event.id} primaryColor={secondaryColor} />}
+                  {activeView === "photo-overlay" && (
+                    <PhotoOverlayModule eventId={event.id} primaryColor={secondaryColor} />
+                  )}
                 </motion.div>
               </motion.div>
             )}
