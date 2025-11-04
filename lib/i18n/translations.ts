@@ -136,7 +136,7 @@ export const translations = {
       },
       categories: {
         Fotograf: "Fotograf",
-        }
+        },
     },
   },
   en: {
@@ -274,7 +274,7 @@ export const translations = {
       },
       categories: {
         Fotograf: "photographer",
-        }
+        },
     },
   },
 } as const
