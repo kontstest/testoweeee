@@ -134,6 +134,9 @@ export const translations = {
         loading: "Ładowanie...",
         noVendors: "Brak usługodawców",
       },
+      categories: {
+        Fotograf: "Fotograf",
+        }
     },
   },
   en: {
@@ -269,6 +272,9 @@ export const translations = {
         loading: "Loading...",
         noVendors: "No vendors to display",
       },
+      categories: {
+        Fotograf: "photographer",
+        }
     },
   },
 } as const
