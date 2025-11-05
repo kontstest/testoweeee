@@ -104,8 +104,11 @@ export interface BingoCard {
   id: string
   event_id: string
   title: string
+  title_en: string | null
   items: string[]
+  items_en: string[] | null
   actions?: string[]
+  actions_en?: string[]
   created_at: string
 }
 

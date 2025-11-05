@@ -25,7 +25,7 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
   const [showAuthDialog, setShowAuthDialog] = useState(false)
   const { user } = useGuestAuth()
   const supabase = createClient()
-  const t = translations[language].modules.bingo
+  const t = translations[language]?.modules?.bingo || translations.pl.modules.bingo
 
   useEffect(() => {
     loadBingo()
@@ -150,29 +150,34 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
     return (
       <Card>
         <CardContent className="py-12 text-center">
-          <h3 className="text-lg md:text-3xl font-semibold mb-2">{bingoCard?.title}</h3>
+          <h3 className="text-lg md:text-3xl font-semibold mb-2">
+            {language === "en" && bingoCard?.title_en ? bingoCard.title_en : bingoCard?.title}
+          </h3>
           <p className="text-muted-foreground text-sm md:text-base">{t.description}</p>
         </CardContent>
       </Card>
     )
   }
 
-  const gridItems = bingoCard.items.slice(0, 25)
+  const displayItems = language === "en" && bingoCard.items_en ? bingoCard.items_en : bingoCard.items
+  const displayActions = language === "en" && bingoCard.actions_en ? bingoCard.actions_en : bingoCard.actions
+
+  const gridItems = displayItems.slice(0, 25)
   while (gridItems.length < 25) {
     gridItems.push("")
   }
 
   return (
     <div className="space-y-6">
-      {bingoCard?.actions && bingoCard.actions.length > 0 && (
+      {displayActions && displayActions.length > 0 && (
         <div className="bg-gradient-to-r" style={{ backgroundColor: `${primaryColor}10` }}>
           <div className="p-4 rounded-lg border" style={{ borderColor: `${primaryColor}30` }}>
             <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: primaryColor }}>
               <Lightbulb className="w-4 h-4" />
-              {t.actions || "Actions"}
+              {t.actions}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {bingoCard.actions.map((action, index) => (
+              {displayActions.map((action, index) => (
                 <div
                   key={index}
                   className="text-sm p-2 bg-white rounded border-l-2"
@@ -188,7 +193,9 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
 
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold mb-2">{bingoCard?.title}</h2>
+          <h2 className="text-2xl md:text-3xl font-bold mb-2">
+            {language === "en" && bingoCard?.title_en ? bingoCard.title_en : bingoCard?.title}
+          </h2>
           <p className="text-muted-foreground text-sm md:text-base">{t.description}</p>
         </div>
         {progress?.is_winner && (
@@ -229,9 +236,7 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
                     </div>
                   ) : (
                     <>
-                      <p className="text-xs sm:text-sm leading-tight px-1">
-                        {translations[language].bingoItems[item] || item}
-                      </p>
+                      <p className="text-xs sm:text-sm leading-tight px-1">{item}</p>
                       {isCompleted && (
                         <CheckCircle2
                           className="w-4 h-4 sm:w-5 sm:h-5 mt-1 flex-shrink-0"
