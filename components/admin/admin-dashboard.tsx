@@ -8,6 +8,8 @@ import { CreateEventDialog } from "./create-event-dialog"
 import { EventsTable } from "./events-table"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { Toggle } from "@/components/ui/toggle"
+import { ModuleSelector } from "./module-selector"
 
 interface AdminDashboardProps {
   events: any[]
@@ -16,6 +18,8 @@ interface AdminDashboardProps {
 export function AdminDashboard({ events: initialEvents }: AdminDashboardProps) {
   const [events, setEvents] = useState(initialEvents)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [statusFilter, setStatusFilter] = useState("")
+  const [moduleFilter, setModuleFilter] = useState("")
   const router = useRouter()
   const supabase = createClient()
 
@@ -36,6 +40,8 @@ export function AdminDashboard({ events: initialEvents }: AdminDashboardProps) {
         )
       `)
       .order("created_at", { ascending: false })
+      .eq("status", statusFilter ? statusFilter : undefined)
+      .eq("module", moduleFilter ? moduleFilter : undefined)
 
     if (data) {
       setEvents(data)
@@ -61,6 +67,25 @@ export function AdminDashboard({ events: initialEvents }: AdminDashboardProps) {
             <LogOut className="w-4 h-4 mr-2" />
             Logout
           </Button>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+          <Toggle
+            value="active"
+            onClick={() => setStatusFilter((prev) => (prev === "active" ? "" : "active"))}
+            className="mr-4"
+          >
+            Active Events
+          </Toggle>
+          <Toggle
+            value="draft"
+            onClick={() => setStatusFilter((prev) => (prev === "draft" ? "" : "draft"))}
+            className="mr-4"
+          >
+            Draft Events
+          </Toggle>
+          <ModuleSelector onModuleChange={setModuleFilter} />
         </div>
 
         {/* Stats Cards */}

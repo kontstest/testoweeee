@@ -47,9 +47,11 @@ export function SurveyTab({ eventId }: SurveyTabProps) {
     const newQuestion: Partial<SurveyQuestion> = {
       question_text: "",
       question_text_en: "",
+      question_text_pl: "",
       question_type: "text",
       options: null,
       options_en: null,
+      options_pl: null,
       order_index: questions.length,
     }
     setQuestions([...questions, newQuestion])
@@ -69,18 +71,24 @@ export function SurveyTab({ eventId }: SurveyTabProps) {
     const updated = [...questions]
     const options = updated[questionIndex].options || []
     const options_en = updated[questionIndex].options_en || []
+    const options_pl = updated[questionIndex].options_pl || []
     updated[questionIndex].options = [...options, ""]
     updated[questionIndex].options_en = [...options_en, ""]
+    updated[questionIndex].options_pl = [...options_pl, ""]
     setQuestions(updated)
   }
 
-  const handleUpdateOption = (questionIndex: number, optionIndex: number, value: string, lang: "en" | "zh") => {
+  const handleUpdateOption = (questionIndex: number, optionIndex: number, value: string, lang: "en" | "zh" | "pl") => {
     const updated = [...questions]
     const options = [...(updated[questionIndex].options || [])]
     const options_en = [...(updated[questionIndex].options_en || [])]
+    const options_pl = [...(updated[questionIndex].options_pl || [])]
     if (lang === "en") {
       options_en[optionIndex] = value
       updated[questionIndex].options_en = options_en
+    } else if (lang === "pl") {
+      options_pl[optionIndex] = value
+      updated[questionIndex].options_pl = options_pl
     } else {
       options[optionIndex] = value
       updated[questionIndex].options = options
@@ -92,10 +100,13 @@ export function SurveyTab({ eventId }: SurveyTabProps) {
     const updated = [...questions]
     const options = [...(updated[questionIndex].options || [])]
     const options_en = [...(updated[questionIndex].options_en || [])]
+    const options_pl = [...(updated[questionIndex].options_pl || [])]
     options.splice(optionIndex, 1)
     options_en.splice(optionIndex, 1)
+    options_pl.splice(optionIndex, 1)
     updated[questionIndex].options = options
     updated[questionIndex].options_en = options_en
+    updated[questionIndex].options_pl = options_pl
     setQuestions(updated)
   }
 
@@ -113,8 +124,10 @@ export function SurveyTab({ eventId }: SurveyTabProps) {
             event_id: eventId,
             title: "Event Survey",
             title_en: "Event Survey",
+            title_pl: "Event Survey",
             description: "Share your feedback",
             description_en: "Share your feedback",
+            description_pl: "Share your feedback",
             is_active: true,
           })
           .select()
@@ -133,9 +146,11 @@ export function SurveyTab({ eventId }: SurveyTabProps) {
         survey_id: surveyId,
         question_text: q.question_text,
         question_text_en: q.question_text_en || q.question_text,
+        question_text_pl: q.question_text_pl || q.question_text,
         question_type: q.question_type,
         options: q.options,
         options_en: q.options_en || q.options,
+        options_pl: q.options_pl || q.options,
         order_index: index,
       }))
 
@@ -187,6 +202,14 @@ export function SurveyTab({ eventId }: SurveyTabProps) {
                         placeholder="How would you rate the event?"
                         value={question.question_text_en || ""}
                         onChange={(e) => handleUpdateQuestion(qIndex, "question_text_en", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Question (Polski)</Label>
+                      <Input
+                        placeholder="Jak oceniasz wydarzenie?"
+                        value={question.question_text_pl || ""}
+                        onChange={(e) => handleUpdateQuestion(qIndex, "question_text_pl", e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
@@ -252,6 +275,36 @@ export function SurveyTab({ eventId }: SurveyTabProps) {
                                 placeholder={`Option ${oIndex + 1}`}
                                 value={option}
                                 onChange={(e) => handleUpdateOption(qIndex, oIndex, e.target.value, "en")}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteOption(qIndex, oIndex)}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {question.question_type === "multiple_choice" && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label>Options (Polski)</Label>
+                          <Button type="button" variant="ghost" size="sm" onClick={() => handleAddOption(qIndex)}>
+                            <Plus className="w-4 h-4 mr-1" />
+                            Add Option
+                          </Button>
+                        </div>
+                        <div className="space-y-2">
+                          {(question.options_pl || []).map((option, oIndex) => (
+                            <div key={oIndex} className="flex gap-2">
+                              <Input
+                                placeholder={`Opcja ${oIndex + 1}`}
+                                value={option}
+                                onChange={(e) => handleUpdateOption(qIndex, oIndex, e.target.value, "pl")}
                               />
                               <Button
                                 type="button"

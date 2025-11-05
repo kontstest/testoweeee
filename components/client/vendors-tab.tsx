@@ -340,7 +340,7 @@ export function VendorsTab({ eventId }: VendorsTabProps) {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="notes">Notatki</Label>
+                <Label htmlFor="notes">Notatki (Polski)</Label>
                 <Textarea
                   id="notes"
                   value={formData.notes}
@@ -349,7 +349,7 @@ export function VendorsTab({ eventId }: VendorsTabProps) {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="notes_en">Notes in English</Label>
+                <Label htmlFor="notes_en">Notatki (English)</Label>
                 <Textarea
                   id="notes_en"
                   value={formData.notes_en}
@@ -460,13 +460,13 @@ export function VendorsTab({ eventId }: VendorsTabProps) {
                 </div>
                 {vendor.notes && (
                   <div className="mt-4 text-sm">
-                    <span className="font-medium">Notatki:</span>
+                    <span className="font-medium">Notatki (Polski):</span>
                     <p className="text-muted-foreground mt-1">{vendor.notes}</p>
                   </div>
                 )}
                 {vendor.notes_en && (
                   <div className="mt-4 text-sm">
-                    <span className="font-medium">Notes in English:</span>
+                    <span className="font-medium">Notatki (English):</span>
                     <p className="text-muted-foreground mt-1">{vendor.notes_en}</p>
                   </div>
                 )}

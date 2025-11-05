@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/client"
@@ -224,7 +222,9 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
                 <CardContent className="p-2 h-full flex flex-col items-center justify-center text-center">
                   {isFreeSpace ? (
                     <div>
-                      <Star className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1" style={{ color: primaryColor }} />
+                      <div className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1" style={{ color: primaryColor }}>
+                        ★
+                      </div>
                       <p className="text-xs font-semibold">{t.free}</p>
                     </div>
                   ) : (
@@ -264,13 +264,5 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
         eventId={eventId}
       />
     </div>
-  )
-}
-
-function Star({ className, style }: { className?: string; style?: React.CSSProperties }) {
-  return (
-    <svg className={className} style={style} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-    </svg>
   )
 }

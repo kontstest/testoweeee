@@ -568,6 +568,34 @@ export function QRTemplateGeneratorAdvanced({ event }: QRTemplateGeneratorAdvanc
                 </div>
               </div>
             )}
+            {/* dodam instrukcje z kodem na template */}
+            <div className="space-y-2">
+              <Label>Instrukcja dla gości</Label>
+              <div className="bg-amber-50 border border-amber-200 rounded p-3 space-y-2">
+                <p className="text-xs font-semibold text-amber-900">Opcja 1: Zeskanuj kod QR</p>
+                <p className="text-xs text-amber-700">Gościa skanujesz poniższy kod QR aby wejść na stronę eventu</p>
+                <div className="bg-white p-2 rounded border border-amber-100 text-center">
+                  {qrCodeDataUrl && (
+                    <img
+                      src={qrCodeDataUrl || "/placeholder.svg"}
+                      alt="QR Code"
+                      style={{ width: "100px", height: "100px", margin: "0 auto" }}
+                    />
+                  )}
+                </div>
+                {event.access_code && (
+                  <>
+                    <p className="text-xs font-semibold text-amber-900 mt-3">Opcja 2: Wpisz kod dostępu</p>
+                    <p className="text-xs text-amber-700">Jeśli QR się nie skanuje, wejdź na:</p>
+                    <p className="font-mono text-sm font-bold text-amber-600 text-center">/dostep</p>
+                    <p className="text-xs text-amber-700">I wpisz kod:</p>
+                    <p className="font-mono text-lg font-bold text-amber-600 text-center tracking-wider">
+                      {event.access_code}
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
 
             <div className="space-y-2">
               <Label>Kolor tła szablonu</Label>
