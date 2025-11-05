@@ -35,6 +35,9 @@ export interface Event {
   module_menu: boolean
   module_survey: boolean
   module_bingo: boolean
+  module_photo_overlay: boolean
+  module_photo_overlay_visible: boolean
+  module_vendors: boolean
   module_photo_gallery_visible: boolean
   module_schedule_visible: boolean
   module_menu_visible: boolean

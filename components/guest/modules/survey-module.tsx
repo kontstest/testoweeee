@@ -33,7 +33,18 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
   const [showAuthDialog, setShowAuthDialog] = useState(false)
   const { user } = useGuestAuth()
   const supabase = createClient()
-  const t = translations[language].modules.survey
+
+  const t = translations[language]?.modules?.survey || {
+    loading: "Loading survey...",
+    submit: "Submit",
+    thankYou: "Thank You",
+    submitting: "Submitting...",
+    noSurvey: "No Survey",
+    notCreated: "Survey not created",
+    alreadySubmitted: "Already submitted",
+    yourName: "Your Name",
+    answer: "Your answer",
+  }
 
   useEffect(() => {
     loadSurvey()

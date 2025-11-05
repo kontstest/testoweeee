@@ -74,7 +74,8 @@ export function VendorsModule({ eventId, primaryColor }: VendorsModuleProps) {
           transition={{ delay: categoryIndex * 0.1 }}
         >
           <h3 className="text-lg md:text-xl font-semibold mb-4" style={{ color: primaryColor }}>
-            {translations[language].categories[category]}
+            {translations[language].modules.categories[category as keyof typeof translations.pl.modules.categories] ||
+              category}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
             {categoryVendors.map((vendor, index) => {

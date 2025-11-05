@@ -42,7 +42,8 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
       menu: false,
       survey: false,
       bingo: false,
-      vendors: false, // Added vendors module checkbox for wedding events
+      photo_overlay: false,
+      vendors: false,
     },
   })
 
@@ -87,7 +88,8 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
           menu: false,
           survey: false,
           bingo: false,
-          vendors: false, // Added vendors module checkbox for wedding events
+          photo_overlay: false,
+          vendors: false,
         },
       })
 
@@ -282,21 +284,38 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
                   </Label>
                 </div>
                 {formData.eventType === "wedding" && (
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="vendors"
-                      checked={formData.modules.vendors}
-                      onCheckedChange={(checked) =>
-                        setFormData({
-                          ...formData,
-                          modules: { ...formData.modules, vendors: checked as boolean },
-                        })
-                      }
-                    />
-                    <Label htmlFor="vendors" className="cursor-pointer">
-                      Vendors - Wedding service providers (photographers, caterers, etc.)
-                    </Label>
-                  </div>
+                  <>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="photo_overlay"
+                        checked={formData.modules.photo_overlay}
+                        onCheckedChange={(checked) =>
+                          setFormData({
+                            ...formData,
+                            modules: { ...formData.modules, photo_overlay: checked as boolean },
+                          })
+                        }
+                      />
+                      <Label htmlFor="photo_overlay" className="cursor-pointer">
+                        Photo with Template - Add custom overlays and templates to photos
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="vendors"
+                        checked={formData.modules.vendors}
+                        onCheckedChange={(checked) =>
+                          setFormData({
+                            ...formData,
+                            modules: { ...formData.modules, vendors: checked as boolean },
+                          })
+                        }
+                      />
+                      <Label htmlFor="vendors" className="cursor-pointer">
+                        Vendors - Wedding service providers (photographers, caterers, etc.)
+                      </Label>
+                    </div>
+                  </>
                 )}
               </div>
             </div>

@@ -23,6 +23,7 @@ export function ModulesVisibilityTab({ event, onUpdate }: ModulesVisibilityTabPr
     menu: event.module_menu_visible ?? true,
     survey: event.module_survey_visible ?? true,
     bingo: event.module_bingo_visible ?? true,
+    photo_overlay: event.module_photo_overlay_visible ?? true,
     vendors: event.module_vendors_visible ?? true,
   })
   const { toast } = useToast()
@@ -65,6 +66,17 @@ export function ModulesVisibilityTab({ event, onUpdate }: ModulesVisibilityTabPr
       purchased: event.module_bingo,
       icon: "🎲",
     },
+    ...(isWedding
+      ? [
+          {
+            key: "photo_overlay" as const,
+            label: "Photo with Template",
+            description: "Custom overlays and templates for photos",
+            purchased: event.module_photo_overlay,
+            icon: "🖼️",
+          },
+        ]
+      : []),
     {
       key: "vendors" as const,
       label: isWedding ? "Vendors" : "Partners",
@@ -85,6 +97,7 @@ export function ModulesVisibilityTab({ event, onUpdate }: ModulesVisibilityTabPr
           module_menu_visible: visibility.menu,
           module_survey_visible: visibility.survey,
           module_bingo_visible: visibility.bingo,
+          module_photo_overlay_visible: visibility.photo_overlay,
           module_vendors_visible: visibility.vendors,
         })
         .eq("id", event.id)
