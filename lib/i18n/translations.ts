@@ -22,6 +22,9 @@ export const translations = {
       bingo: "Weselne zabawy",
       bingoDesc: "Zagraj z nami w BINGO i wygraj nagrody",
       bingoButton: "Zagraj w BINGO",
+      survey: "Wypełnij ankietę",
+      surveyDesc: "Sprawdź na ile znasz parę młodą!".
+      surveyButton: "Wypełnij ankietę",
       thanks: "Dziękujemy",
       thanksDesc: "że jesteście z nami w tym wyjątkowym dniu",
       back: "Powrót",
@@ -46,6 +49,9 @@ export const translations = {
       bingo: "Interaktywne atrakcje",
       bingoDesc: "Weź udział w zabawach i konkursach",
       bingoButton: "Zagraj w BINGO",
+      survey: "Wypełnij ankietę",
+      surveyDesc: "Twoja opinia jest dla nas ważna".
+      surveyButton: "Wypełnij ankietę",
       thanks: "Dziękujemy za udział",
       thanksDesc: "Mamy nadzieję, że dobrze się bawicie",
       back: "Powrót",
@@ -181,6 +187,9 @@ export const translations = {
       bingo: "Wedding Games",
       bingoDesc: "Play BINGO with us and win prizes",
       bingoButton: "Play BINGO",
+      survey: "Fill Survey",
+      surveyDesc: "Your opinion matter to us".
+      surveyButton: "Fill Survey",
       thanks: "Thank You",
       thanksDesc: "for being with us on this special day",
       back: "Back",
@@ -205,6 +214,9 @@ export const translations = {
       bingo: "Interactive Attractions",
       bingoDesc: "Participate in games and contests",
       bingoButton: "Play BINGO",
+      survey: "Fill Survey",
+      surveyDesc: "Your opinion matter to us".
+      surveyButton: "Fill Survey",
       thanks: "Thank You for Participating",
       thanksDesc: "We hope you're having a great time",
       back: "Back",
