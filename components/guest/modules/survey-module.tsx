@@ -34,18 +34,20 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
   const { user } = useGuestAuth()
   const supabase = createClient()
 
-  const t = translations[language]?.modules?.survey || {
-    title: "Survey",
-    description: "Please fill out this survey",
-    loading: "Loading survey...",
-    submit: "Submit",
-    submitting: "Submitting...",
-    thankYou: "Thank You",
-    noSurvey: "No Survey",
-    notCreated: "Survey not created",
-    alreadySubmitted: "Already submitted",
-    yourName: "Your Name",
-    answer: "Your answer",
+  const t = 
+    translations[language]?.event?.survey ||
+    translations[language]?.wedding?.survey || {
+      title: "Survey",
+      description: "Please fill out this survey",
+      loading: "Loading survey...",
+      submit: "Submit",
+      submitting: "Submitting...",
+      thankYou: "Thank You",
+      noSurvey: "No Survey",
+      notCreated: "Survey not created",
+      alreadySubmitted: "Already submitted",
+      yourName: "Your Name",
+      answer: "Your answer",
   }
 
   useEffect(() => {
