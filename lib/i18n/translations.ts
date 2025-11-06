@@ -50,7 +50,7 @@ export const translations = {
       bingoDesc: "Weź udział w zabawach i konkursach",
       bingoButton: "Zagraj w BINGO",
       survey: "Wypełnij ankietę",
-      surveyDesc: "Twoja opinia jest dla nas ważna".
+      surveyDesc: "Twoja opinia jest dla nas ważna",
       surveyButton: "Wypełnij ankietę",
       thanks: "Dziękujemy za udział",
       thanksDesc: "Mamy nadzieję, że dobrze się bawicie",
@@ -188,7 +188,7 @@ export const translations = {
       bingoDesc: "Play BINGO with us and win prizes",
       bingoButton: "Play BINGO",
       survey: "Fill Survey",
-      surveyDesc: "Your opinion matter to us".
+      surveyDesc: "Your opinion matter to us",
       surveyButton: "Fill Survey",
       thanks: "Thank You",
       thanksDesc: "for being with us on this special day",
@@ -215,7 +215,7 @@ export const translations = {
       bingoDesc: "Participate in games and contests",
       bingoButton: "Play BINGO",
       survey: "Fill Survey",
-      surveyDesc: "Your opinion matter to us".
+      surveyDesc: "Your opinion matter to us",
       surveyButton: "Fill Survey",
       thanks: "Thank You for Participating",
       thanksDesc: "We hope you're having a great time",
