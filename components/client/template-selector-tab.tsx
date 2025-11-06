@@ -218,9 +218,13 @@ export function TemplateSelectorTab({ event, onUpdate }: TemplateSelectorTabProp
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Podgląd Szablonu</h3>
           <div className="relative border-2 border-border rounded-xl bg-white shadow-lg overflow-auto h-[90vh]">
-            {SelectedComponent && (
+            {SelectedComponent ? (
               <div className="scale-[0.85] origin-top-left transform w-[125%]">
                 <SelectedComponent event={event} />
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-muted-foreground">Loading preview...</p>
               </div>
             )}
           </div>

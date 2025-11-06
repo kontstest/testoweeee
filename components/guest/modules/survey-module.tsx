@@ -35,10 +35,12 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
   const supabase = createClient()
 
   const t = translations[language]?.modules?.survey || {
+    title: "Survey",
+    description: "Please fill out this survey",
     loading: "Loading survey...",
     submit: "Submit",
-    thankYou: "Thank You",
     submitting: "Submitting...",
+    thankYou: "Thank You",
     noSurvey: "No Survey",
     notCreated: "Survey not created",
     alreadySubmitted: "Already submitted",

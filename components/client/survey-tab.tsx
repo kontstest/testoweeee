@@ -78,7 +78,7 @@ export function SurveyTab({ eventId }: SurveyTabProps) {
     setQuestions(updated)
   }
 
-  const handleUpdateOption = (questionIndex: number, optionIndex: number, value: string, lang: "en" | "zh" | "pl") => {
+  const handleUpdateOption = (questionIndex: number, optionIndex: number, value: string, lang: "en" | "pl") => {
     const updated = [...questions]
     const options = [...(updated[questionIndex].options || [])]
     const options_en = [...(updated[questionIndex].options_en || [])]
@@ -189,14 +189,6 @@ export function SurveyTab({ eventId }: SurveyTabProps) {
                 <div className="flex gap-4">
                   <div className="flex-1 space-y-4">
                     <div className="space-y-2">
-                      <Label>Question (中文)</Label>
-                      <Input
-                        placeholder="How would you rate the event?"
-                        value={question.question_text}
-                        onChange={(e) => handleUpdateQuestion(qIndex, "question_text", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
                       <Label>Question (English)</Label>
                       <Input
                         placeholder="How would you rate the event?"
@@ -229,36 +221,6 @@ export function SurveyTab({ eventId }: SurveyTabProps) {
                       </Select>
                     </div>
 
-                    {question.question_type === "multiple_choice" && (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label>Options (中文)</Label>
-                          <Button type="button" variant="ghost" size="sm" onClick={() => handleAddOption(qIndex)}>
-                            <Plus className="w-4 h-4 mr-1" />
-                            Add Option
-                          </Button>
-                        </div>
-                        <div className="space-y-2">
-                          {(question.options || []).map((option, oIndex) => (
-                            <div key={oIndex} className="flex gap-2">
-                              <Input
-                                placeholder={`Option ${oIndex + 1}`}
-                                value={option}
-                                onChange={(e) => handleUpdateOption(qIndex, oIndex, e.target.value, "zh")}
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteOption(qIndex, oIndex)}
-                              >
-                                <X className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                     {question.question_type === "multiple_choice" && (
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
