@@ -32,6 +32,8 @@ import { ModulesVisibilityTab } from "./modules-visibility-tab"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { generateEventQRCodeUrl, getEventUrl } from "@/lib/utils/qr-code"
 import { QRTemplateGenerator } from "./qr-template-generator"
+import { SurveyResponsesTab } from "./survey-responses-tab"
+import { BingoResponsesTab } from "./bingo-responses-tab"
 
 interface ClientDashboardProps {
   events: Event[]
@@ -82,9 +84,7 @@ export function ClientDashboard({ events: initialEvents, userId }: ClientDashboa
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-balance mb-2">
-              {isWedding ? "Pulpit Weselny" : "Event Dashboard"}
-            </h1>
+            <h1 className="text-4xl font-bold text-balance mb-2">{isWedding ? "Pulpit Weselny" : "Event Dashboard"}</h1>
             <p className="text-muted-foreground">
               {isWedding ? "Twórz wspomnienia na całe życie" : "Customize your event experience"}
             </p>
@@ -210,10 +210,22 @@ export function ClientDashboard({ events: initialEvents, userId }: ClientDashboa
                     <span className="hidden sm:inline">Ankiety</span>
                   </TabsTrigger>
                 )}
+                {selectedEvent.module_survey && (
+                  <TabsTrigger value="survey-responses">
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    <span className="hidden sm:inline">Odpowiedzi Ankiet</span>
+                  </TabsTrigger>
+                )}
                 {selectedEvent.module_bingo && (
                   <TabsTrigger value="bingo">
                     <Grid3x3 className="w-4 h-4 mr-2" />
                     <span className="hidden sm:inline">Bingo</span>
+                  </TabsTrigger>
+                )}
+                {selectedEvent.module_bingo && (
+                  <TabsTrigger value="bingo-responses">
+                    <Grid3x3 className="w-4 h-4 mr-2" />
+                    <span className="hidden sm:inline">Odpowiedzi Bingo</span>
                   </TabsTrigger>
                 )}
               </TabsList>
@@ -266,9 +278,21 @@ export function ClientDashboard({ events: initialEvents, userId }: ClientDashboa
                 </TabsContent>
               )}
 
+              {selectedEvent.module_survey && (
+                <TabsContent value="survey-responses" className="mt-6">
+                  <SurveyResponsesTab eventId={selectedEvent.id} />
+                </TabsContent>
+              )}
+
               {selectedEvent.module_bingo && (
                 <TabsContent value="bingo" className="mt-6">
                   <BingoTab eventId={selectedEvent.id} />
+                </TabsContent>
+              )}
+
+              {selectedEvent.module_bingo && (
+                <TabsContent value="bingo-responses" className="mt-6">
+                  <BingoResponsesTab eventId={selectedEvent.id} />
                 </TabsContent>
               )}
             </Tabs>

@@ -34,36 +34,10 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
   const { user } = useGuestAuth()
   const supabase = createClient()
 
-  const t = {
-  title:
-    translations[language]?.modules?.survey?.title ||
-    "Survey",
-  description:
-    translations[language]?.modules?.survey?.description ||
-    "Please fill out this survey",
-  loading:
-    translations[language]?.modules?.survey?.loading ||
-    "Loading survey...",
-  submit:
-    translations[language]?.modules?.survey?.submit ||
-    "Submit",
-  submitting:
-    translations[language]?.modules?.survey?.submitting ||
-    "Submitting...",
-  thankYou:
-    translations[language]?.modules?.survey?.thankYou ||
-    "Thank You",
-  noSurvey:
-    translations[language]?.modules?.survey?.noSurvey ||
-    "No Survey",
-  notAdded:
-    translations[language]?.modules?.survey?.notAdded ||
-    "Survey not added",
-  label:
-    translations[language]?.modules?.survey?.label ||
-    "Question",
-}
+  // Pobranie tłumaczeń ankiety z pliku translations
+  const t = translations[language]?.modules?.survey ?? {}
 
+  const safe = <K extends keyof typeof t>(key: K, fallback: string) => t[key] ?? fallback
 
   useEffect(() => {
     loadSurvey()
@@ -82,18 +56,14 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
     if (surveyData) {
       setSurvey(surveyData)
 
-      // Load questions
       const { data: questionsData } = await supabase
         .from("survey_questions")
         .select("*")
         .eq("survey_id", surveyData.id)
         .order("order_index", { ascending: true })
 
-      if (questionsData) {
-        setQuestions(questionsData)
-      }
+      if (questionsData) setQuestions(questionsData)
 
-      // Check if user has already submitted
       if (user) {
         const { data: existingResponses } = await supabase
           .from("survey_responses")
@@ -101,9 +71,7 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
           .eq("survey_id", surveyData.id)
           .eq("guest_id", user.id)
 
-        if (existingResponses && existingResponses.length > 0) {
-          setHasSubmitted(true)
-        }
+        if (existingResponses && existingResponses.length > 0) setHasSubmitted(true)
       }
     }
 
@@ -119,7 +87,6 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
       setShowAuthDialog(true)
       return
     }
-
     if (!survey) return
 
     setIsSubmitting(true)
@@ -138,10 +105,10 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
       if (error) throw error
 
       setHasSubmitted(true)
-      toast.success(t.thankYou)
+      toast.success(safe("thankYou", "Thank you!"))
     } catch (error) {
       console.error("[v0] Error submitting survey:", error)
-      toast.error(t.submit)
+      toast.error(safe("submit", "Submit"))
     } finally {
       setIsSubmitting(false)
     }
@@ -155,7 +122,7 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
             className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4"
             style={{ borderTopColor: primaryColor }}
           ></div>
-          <p className="text-muted-foreground">{t.loading}</p>
+          <p className="text-muted-foreground">{safe("loading", "Loading survey...")}</p>
         </div>
       </div>
     )
@@ -165,8 +132,8 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
     return (
       <Card>
         <CardContent className="py-12 text-center">
-          <h3 className="text-lg font-semibold mb-2">{t.noSurvey}</h3>
-          <p className="text-muted-foreground">{t.notCreated}</p>
+          <h3 className="text-lg font-semibold mb-2">{safe("noSurvey", "No survey available")}</h3>
+          <p className="text-muted-foreground">{safe("notAdded", "Survey not created")}</p>
         </CardContent>
       </Card>
     )
@@ -177,15 +144,16 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
       <Card>
         <CardContent className="py-12 text-center">
           <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: primaryColor }} />
-          <h3 className="text-lg font-semibold mb-2">{t.thankYou}</h3>
-          <p className="text-muted-foreground">{t.alreadySubmitted}</p>
+          <h3 className="text-lg font-semibold mb-2">{safe("thankYou", "Thank you!")}</h3>
+          <p className="text-muted-foreground">{safe("alreadySubmitted", "Already submitted")}</p>
         </CardContent>
       </Card>
     )
   }
 
   const surveyTitle = language === "en" && survey.title_en ? survey.title_en : survey.title
-  const surveyDescription = language === "en" && survey.description_en ? survey.description_en : survey.description
+  const surveyDescription =
+    language === "en" && survey.description_en ? survey.description_en : survey.description
 
   return (
     <div className="space-y-6">
@@ -197,9 +165,9 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
       <Card>
         <CardContent className="pt-6">
           <div className="space-y-2">
-            <Label className="text-sm font-medium">{t.yourName} (opcjonalnie)</Label>
+            <Label className="text-sm font-medium">{safe("yourName", "Your Name")} (optional)</Label>
             <Input
-              placeholder={t.yourName}
+              placeholder={safe("yourName", "Your Name")}
               value={guestName}
               onChange={(e) => setGuestName(e.target.value)}
               className="text-base"
@@ -215,12 +183,14 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
               <div className="space-y-4">
                 <Label className="text-base font-semibold">
                   {index + 1}.{" "}
-                  {language === "en" && question.question_text_en ? question.question_text_en : question.question_text}
+                  {language === "en" && question.question_text_en
+                    ? question.question_text_en
+                    : question.question_text}
                 </Label>
 
                 {question.question_type === "text" && (
                   <Textarea
-                    placeholder={t.answer}
+                    placeholder={safe("label", "Your answer")}
                     value={responses[question.id] || ""}
                     onChange={(e) => handleResponseChange(question.id, e.target.value)}
                     rows={3}
@@ -263,7 +233,9 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
                         className="text-white"
                       >
                         <Star
-                          className={`w-5 h-5 ${responses[question.id] === rating.toString() ? "fill-current" : ""}`}
+                          className={`w-5 h-5 ${
+                            responses[question.id] === rating.toString() ? "fill-current" : ""
+                          }`}
                         />
                       </Button>
                     ))}
@@ -283,7 +255,7 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
           style={{ backgroundColor: primaryColor }}
           className="text-white"
         >
-          {isSubmitting ? t.submitting : t.submit}
+          {isSubmitting ? safe("submitting", "Submitting...") : safe("submit", "Submit")}
         </Button>
       </div>
 

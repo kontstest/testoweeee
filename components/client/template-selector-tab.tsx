@@ -5,10 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { createClient } from "@/lib/supabase/client"
 import type { Event } from "@/lib/types/database"
 import { toast } from "sonner"
-import { GuestEventPageClassic } from "@/components/guest/templates/guest-event-page-classic"
-import { GuestEventPageElegant } from "@/components/guest/templates/guest-event-page-elegant"
-import { GuestEventPageColorful } from "@/components/guest/templates/guest-event-page-colorful"
-import { GuestEventPageMinimal } from "@/components/guest/templates/guest-event-page-minimal"
 import { Eye, EyeOff } from "lucide-react"
 
 interface TemplateSelectorTabProps {
@@ -23,7 +19,7 @@ const templates = [
     description: "Elegancka klasyka z zaokrągleniami",
     nameEn: "Classic",
     descriptionEn: "Elegant classic with rounded corners",
-    component: GuestEventPageClassic,
+    colors: { bg: "from-pink-50 to-purple-50", accent: "bg-pink-600" },
   },
   {
     id: "elegant",
@@ -31,7 +27,7 @@ const templates = [
     description: "Minimalistyczny elegancki styl",
     nameEn: "Elegant",
     descriptionEn: "Minimalist elegant style",
-    component: GuestEventPageElegant,
+    colors: { bg: "from-slate-50 to-neutral-50", accent: "bg-slate-900" },
   },
   {
     id: "colorful",
@@ -39,7 +35,7 @@ const templates = [
     description: "Żywy, pełny życia i barw",
     nameEn: "Colorful",
     descriptionEn: "Vibrant, full of life and colors",
-    component: GuestEventPageColorful,
+    colors: { bg: "from-yellow-50 via-orange-50 to-red-50", accent: "bg-orange-500" },
   },
   {
     id: "minimal",
@@ -47,7 +43,7 @@ const templates = [
     description: "Prosty, czysty i nowoczesny",
     nameEn: "Minimal",
     descriptionEn: "Simple, clean and modern",
-    component: GuestEventPageMinimal,
+    colors: { bg: "from-white to-gray-50", accent: "bg-gray-800" },
   },
 ]
 
@@ -120,7 +116,6 @@ export function TemplateSelectorTab({ event, onUpdate }: TemplateSelectorTabProp
   }
 
   const selectedTemplateData = templates.find((t) => t.id === selectedTemplate)
-  const SelectedComponent = selectedTemplateData?.component
 
   return (
     <div className="grid lg:grid-cols-2 gap-8 overflow-auto">
@@ -217,16 +212,17 @@ export function TemplateSelectorTab({ event, onUpdate }: TemplateSelectorTabProp
       <div className="lg:sticky lg:top-4 lg:self-start">
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Podgląd Szablonu</h3>
-          <div className="relative border-2 border-border rounded-xl bg-white shadow-lg overflow-auto h-[90vh]">
-            {SelectedComponent ? (
-              <div className="scale-[0.85] origin-top-left transform w-[125%]">
-                <SelectedComponent event={event} />
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-muted-foreground">Loading preview...</p>
-              </div>
-            )}
+          <div
+            className={`relative border-2 border-border rounded-xl bg-gradient-to-br ${selectedTemplateData?.colors.bg || "from-gray-50 to-white"} shadow-lg overflow-auto h-[90vh] p-6 flex flex-col items-center justify-center`}
+          >
+            <div className="text-center space-y-4 max-w-md">
+              <div
+                className={`w-20 h-20 ${selectedTemplateData?.colors.accent || "bg-gray-400"} rounded-lg mx-auto opacity-80`}
+              ></div>
+              <h3 className="text-2xl font-bold text-gray-900">{selectedTemplateData?.name}</h3>
+              <p className="text-gray-600">{selectedTemplateData?.description}</p>
+              <p className="text-sm text-gray-500">Podgląd szablonu wyświetli się na stronie gościa</p>
+            </div>
           </div>
         </div>
       </div>
