@@ -5,6 +5,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/client"
 import { useGuestAuth } from "@/lib/hooks/use-guest-auth"
 import { GuestAuthDialog } from "../guest-auth-dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Trophy, CheckCircle2, Lightbulb } from "lucide-react"
 import type { BingoCard, BingoProgress } from "@/lib/types/database"
 import { cn } from "@/lib/utils"
@@ -21,8 +24,12 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
   const [bingoCard, setBingoCard] = useState<BingoCard | null>(null)
   const [progress, setProgress] = useState<BingoProgress | null>(null)
   const [completedItems, setCompletedItems] = useState<number[]>([])
+  const [guestName, setGuestName] = useState("")
+  const [showNameInput, setShowNameInput] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [showAuthDialog, setShowAuthDialog] = useState(false)
+  const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null)
+  const [showItemModal, setShowItemModal] = useState(false)
   const { user } = useGuestAuth()
   const supabase = createClient()
   const t = translations[language]?.modules?.bingo || translations.pl.modules.bingo
@@ -39,7 +46,6 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
     if (cardData) {
       setBingoCard(cardData)
 
-      // Load user progress if logged in
       if (user) {
         const { data: progressData } = await supabase
           .from("bingo_progress")
@@ -51,22 +57,10 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
         if (progressData) {
           setProgress(progressData)
           setCompletedItems(progressData.completed_items || [])
+          setGuestName(progressData.guest_name || "")
+          setShowNameInput(!progressData.guest_name)
         } else {
-          // Create initial progress
-          const { data: newProgress } = await supabase
-            .from("bingo_progress")
-            .insert({
-              bingo_card_id: cardData.id,
-              guest_id: user.id,
-              completed_items: [],
-              is_winner: false,
-            })
-            .select()
-            .maybeSingle()
-
-          if (newProgress) {
-            setProgress(newProgress)
-          }
+          setShowNameInput(true)
         }
       }
     }
@@ -74,13 +68,45 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
     setIsLoading(false)
   }
 
-  const handleItemClick = async (index: number) => {
-    if (!user) {
-      setShowAuthDialog(true)
-      return
-    }
+  const handleSaveName = async () => {
+    if (!user || !bingoCard || !guestName.trim()) return
 
-    if (!progress || !bingoCard) return
+    try {
+      if (progress) {
+        await supabase.from("bingo_progress").update({ guest_name: guestName }).eq("id", progress.id)
+
+        setProgress({ ...progress, guest_name: guestName })
+      } else {
+        const { data: newProgress } = await supabase
+          .from("bingo_progress")
+          .insert({
+            bingo_card_id: bingoCard.id,
+            guest_id: user.id,
+            guest_name: guestName,
+            completed_items: [],
+            is_winner: false,
+          })
+          .select()
+          .maybeSingle()
+
+        if (newProgress) {
+          setProgress(newProgress)
+        }
+      }
+
+      setShowNameInput(false)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  const handleItemClick = (index: number) => {
+    setSelectedItemIndex(index)
+    setShowItemModal(true)
+  }
+
+  const handleCompleteItem = async (index: number) => {
+    if (!user || !progress || !bingoCard) return
 
     const newCompletedItems = completedItems.includes(index)
       ? completedItems.filter((i) => i !== index)
@@ -88,11 +114,9 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
 
     setCompletedItems(newCompletedItems)
 
-    // Check for bingo (5 in a row, column, or diagonal)
     const isWinner = checkBingo(newCompletedItems)
 
-    // Update progress in database
-    const { error } = await supabase
+    await supabase
       .from("bingo_progress")
       .update({
         completed_items: newCompletedItems,
@@ -100,29 +124,27 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
       })
       .eq("id", progress.id)
 
-    if (!error && isWinner && !progress.is_winner) {
+    if (isWinner && !progress.is_winner) {
       alert("🎉 BINGO! You won!")
       setProgress({ ...progress, is_winner: true })
     }
+
+    setShowItemModal(false)
   }
 
   const checkBingo = (completed: number[]): boolean => {
-    // For a 5x5 grid
     const size = 5
 
-    // Check rows
     for (let row = 0; row < size; row++) {
       const rowItems = Array.from({ length: size }, (_, i) => row * size + i)
       if (rowItems.every((i) => completed.includes(i))) return true
     }
 
-    // Check columns
     for (let col = 0; col < size; col++) {
       const colItems = Array.from({ length: size }, (_, i) => i * size + col)
       if (colItems.every((i) => completed.includes(i))) return true
     }
 
-    // Check diagonals
     const diagonal1 = Array.from({ length: size }, (_, i) => i * size + i)
     if (diagonal1.every((i) => completed.includes(i))) return true
 
@@ -146,26 +168,71 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
     )
   }
 
+  if (!user) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center">
+          <h3 className="text-lg font-semibold mb-2">Play Bingo</h3>
+          <p className="text-muted-foreground text-sm mb-4">Sign in to play</p>
+          <Button onClick={() => setShowAuthDialog(true)}>Sign In</Button>
+          <GuestAuthDialog
+            open={showAuthDialog}
+            onOpenChange={setShowAuthDialog}
+            onSuccess={() => {
+              setShowAuthDialog(false)
+              loadBingo()
+            }}
+            eventId={eventId}
+          />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (showNameInput) {
+    return (
+      <Card>
+        <CardContent className="py-12">
+          <h3 className="text-lg font-semibold mb-4 text-center">How should we call you?</h3>
+          <div className="max-w-sm mx-auto space-y-4">
+            <Input
+              placeholder="Your name or nickname"
+              value={guestName}
+              onChange={(e) => setGuestName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSaveName()}
+            />
+            <Button onClick={handleSaveName} disabled={!guestName.trim()} className="w-full">
+              Start Playing
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   if (!bingoCard || bingoCard.items.length < 16) {
     return (
       <Card>
         <CardContent className="py-12 text-center">
-          <h3 className="text-lg md:text-3xl font-semibold mb-2">
-            {language === "en" && bingoCard?.title_en ? bingoCard.title_en : bingoCard?.title}
-          </h3>
-          <p className="text-muted-foreground text-sm md:text-base">{t.description}</p>
+          <p className="text-muted-foreground">{t.description}</p>
         </CardContent>
       </Card>
     )
   }
 
   const displayItems = language === "en" && bingoCard.items_en ? bingoCard.items_en : bingoCard.items
+  const displayDescriptions =
+    language === "en" && bingoCard.descriptions_en ? bingoCard.descriptions_en : bingoCard.descriptions
   const displayActions = language === "en" && bingoCard.actions_en ? bingoCard.actions_en : bingoCard.actions
 
   const gridItems = displayItems.slice(0, 25)
   while (gridItems.length < 25) {
     gridItems.push("")
   }
+
+  const selectedItem = selectedItemIndex !== null ? gridItems[selectedItemIndex] : null
+  const selectedDescription = selectedItemIndex !== null ? displayDescriptions?.[selectedItemIndex] : null
+  const selectedImage = selectedItemIndex !== null ? bingoCard.images?.[selectedItemIndex] : null
 
   return (
     <div className="space-y-6">
@@ -196,7 +263,9 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
           <h2 className="text-2xl md:text-3xl font-bold mb-2">
             {language === "en" && bingoCard?.title_en ? bingoCard.title_en : bingoCard?.title}
           </h2>
-          <p className="text-muted-foreground text-sm md:text-base">{t.description}</p>
+          <p className="text-muted-foreground text-sm">
+            Playing as: <span className="font-semibold">{guestName}</span>
+          </p>
         </div>
         {progress?.is_winner && (
           <div className="flex items-center gap-2 text-yellow-600 text-lg font-semibold">
@@ -252,22 +321,37 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
         </div>
       </div>
 
+      <Dialog open={showItemModal} onOpenChange={setShowItemModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{selectedItem}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedImage && (
+              <img
+                src={selectedImage || "/placeholder.svg"}
+                alt={selectedItem || ""}
+                className="w-full h-48 object-cover rounded"
+              />
+            )}
+            {selectedDescription && <p className="text-sm text-muted-foreground">{selectedDescription}</p>}
+            <Button
+              onClick={() => selectedItemIndex !== null && handleCompleteItem(selectedItemIndex)}
+              className="w-full"
+              style={{ backgroundColor: primaryColor }}
+            >
+              {completedItems.includes(selectedItemIndex!) ? "Undo Complete" : "Mark Complete"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="text-center text-sm text-muted-foreground">
         <p>{t.complete5}</p>
         <p className="mt-1">
           {t.progress}: {completedItems.length} / {gridItems.filter((_, i) => i !== 12).length} {t.items}
         </p>
       </div>
-
-      <GuestAuthDialog
-        open={showAuthDialog}
-        onOpenChange={setShowAuthDialog}
-        onSuccess={() => {
-          setShowAuthDialog(false)
-          loadBingo()
-        }}
-        eventId={eventId}
-      />
     </div>
   )
 }

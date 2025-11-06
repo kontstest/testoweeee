@@ -16,7 +16,6 @@ import {
   Heart,
   Eye,
   X,
-  Settings,
   Zap,
   BarChart3,
 } from "lucide-react"
@@ -38,6 +37,7 @@ import { QRTemplateGeneratorAdvanced } from "./qr-template-generator-advanced"
 import { AdvancedSettingsTab } from "./advanced-settings-tab"
 import { TemplateSelectorTab } from "./template-selector-tab" // Added import
 import { SurveyResponsesTab } from "./survey-responses-tab" // Added import
+import { BingoResponsesTab } from "./bingo-responses-tab" // Added import
 import { cn } from "@/lib/utils"
 
 interface ClientDashboardProps {
@@ -96,9 +96,9 @@ export function ClientDashboardSidebar({ events: initialEvents, userId }: Client
     { id: "schedule", label: "Harmonogram", icon: Calendar, show: selectedEvent.module_schedule },
     { id: "menu", label: "Menu", icon: MenuIcon, show: selectedEvent.module_menu },
     { id: "survey", label: "Ankiety", icon: MessageSquare, show: selectedEvent.module_survey },
-    { id: "survey-responses", label: "Odpowiedzi", icon: BarChart3, show: selectedEvent.module_survey }, // Added survey responses tab
+    { id: "survey-responses", label: "Odpowiedzi Ankiet", icon: BarChart3, show: selectedEvent.module_survey },
+    { id: "bingo-responses", label: "Odpowiedzi Bingo", icon: Grid3x3, show: selectedEvent.module_bingo }, // Added bingo responses tab
     { id: "bingo", label: "Bingo", icon: Grid3x3, show: selectedEvent.module_bingo },
-    { id: "advanced", label: "Zaawansowane", icon: Settings, show: true },
   ].filter((item) => item.show)
 
   const renderContent = () => {
@@ -125,6 +125,8 @@ export function ClientDashboardSidebar({ events: initialEvents, userId }: Client
         return <SurveyTab eventId={selectedEvent.id} />
       case "survey-responses":
         return <SurveyResponsesTab eventId={selectedEvent.id} /> // Added survey responses case
+      case "bingo-responses":
+        return <BingoResponsesTab eventId={selectedEvent.id} /> // Added bingo responses case
       case "bingo":
         return <BingoTab eventId={selectedEvent.id} />
       case "advanced":

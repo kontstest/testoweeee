@@ -107,6 +107,9 @@ export interface BingoCard {
   title_en: string | null
   items: string[]
   items_en: string[] | null
+  descriptions?: string[] | null // Add descriptions for each item
+  descriptions_en?: string[] | null // Add English descriptions
+  images?: string[] | null // Add images for each item
   actions?: string[]
   actions_en?: string[]
   created_at: string
@@ -116,6 +119,7 @@ export interface BingoProgress {
   id: string
   bingo_card_id: string
   guest_id: string
+  guest_name?: string // Add guest name field
   completed_items: number[]
   is_winner: boolean
   created_at: string

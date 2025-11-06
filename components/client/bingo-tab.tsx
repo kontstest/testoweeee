@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -7,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/client"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, Upload, X } from "lucide-react"
 import type { BingoCard } from "@/lib/types/database"
 import { toast } from "sonner"
 
@@ -21,6 +23,9 @@ export function BingoTab({ eventId }: BingoTabProps) {
   const [titleEn, setTitleEn] = useState("")
   const [items, setItems] = useState<string[]>([])
   const [itemsEn, setItemsEn] = useState<string[]>([])
+  const [descriptions, setDescriptions] = useState<string[]>([])
+  const [descriptionsEn, setDescriptionsEn] = useState<string[]>([])
+  const [images, setImages] = useState<(string | null)[]>([])
   const [actions, setActions] = useState<string[]>([])
   const [actionsEn, setActionsEn] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -39,6 +44,9 @@ export function BingoTab({ eventId }: BingoTabProps) {
       setTitleEn(data.title_en || "")
       setItems(data.items || [])
       setItemsEn(data.items_en || [])
+      setDescriptions(data.descriptions || [])
+      setDescriptionsEn(data.descriptions_en || [])
+      setImages(data.images || [])
       setActions(data.actions || [])
       setActionsEn(data.actions_en || [])
     }
@@ -47,23 +55,71 @@ export function BingoTab({ eventId }: BingoTabProps) {
   const handleAddItem = () => {
     setItems([...items, ""])
     setItemsEn([...itemsEn, ""])
+    setDescriptions([...descriptions, ""])
+    setDescriptionsEn([...descriptionsEn, ""])
+    setImages([...images, null])
   }
 
-  const handleUpdateItem = (index: number, value: string, lang: "pl" | "en") => {
-    if (lang === "pl") {
-      const updated = [...items]
+  const handleUpdateItem = (
+    index: number,
+    field: "text" | "desc" | "image",
+    value: string | null,
+    lang: "pl" | "en",
+  ) => {
+    if (field === "text") {
+      if (lang === "pl") {
+        const updated = [...items]
+        updated[index] = value || ""
+        setItems(updated)
+      } else {
+        const updated = [...itemsEn]
+        updated[index] = value || ""
+        setItemsEn(updated)
+      }
+    } else if (field === "desc") {
+      if (lang === "pl") {
+        const updated = [...descriptions]
+        updated[index] = value || ""
+        setDescriptions(updated)
+      } else {
+        const updated = [...descriptionsEn]
+        updated[index] = value || ""
+        setDescriptionsEn(updated)
+      }
+    } else if (field === "image") {
+      const updated = [...images]
       updated[index] = value
-      setItems(updated)
-    } else {
-      const updated = [...itemsEn]
-      updated[index] = value
-      setItemsEn(updated)
+      setImages(updated)
     }
   }
 
   const handleDeleteItem = (index: number) => {
     setItems(items.filter((_, i) => i !== index))
     setItemsEn(itemsEn.filter((_, i) => i !== index))
+    setDescriptions(descriptions.filter((_, i) => i !== index))
+    setDescriptionsEn(descriptionsEn.filter((_, i) => i !== index))
+    setImages(images.filter((_, i) => i !== index))
+  }
+
+  const handleImageUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      const fileName = `bingo-${Date.now()}-${file.name}`
+      const { data, error } = await supabase.storage.from("event-photos").upload(fileName, file)
+
+      if (error) throw error
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("event-photos").getPublicUrl(fileName)
+      handleUpdateItem(index, "image", publicUrl, "pl")
+      toast.success("Image uploaded successfully")
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to upload image")
+    }
   }
 
   const handleAddAction = () => {
@@ -93,9 +149,8 @@ export function BingoTab({ eventId }: BingoTabProps) {
 
     try {
       const filteredItems = items.filter((item) => item.trim() !== "")
-      const filteredItemsEn = itemsEn.filter((item) => item.trim() !== "")
-      const filteredActions = actions.filter((action) => action.trim() !== "")
-      const filteredActionsEn = actionsEn.filter((action) => action.trim() !== "")
+      const filteredDescriptions = descriptions.filter((desc) => desc.trim() !== "")
+      const filteredImages = images.filter((img) => img !== null)
 
       if (bingoCard) {
         const { error } = await supabase
@@ -104,9 +159,19 @@ export function BingoTab({ eventId }: BingoTabProps) {
             title: title || "Event Bingo",
             title_en: titleEn || null,
             items: filteredItems,
-            items_en: filteredItemsEn.length > 0 ? filteredItemsEn : null,
-            actions: filteredActions.length > 0 ? filteredActions : null,
-            actions_en: filteredActionsEn.length > 0 ? filteredActionsEn : null,
+            items_en:
+              itemsEn.filter((item) => item.trim() !== "").length > 0
+                ? itemsEn.filter((item) => item.trim() !== "")
+                : null,
+            descriptions: filteredDescriptions.length > 0 ? filteredDescriptions : null,
+            descriptions_en:
+              descriptionsEn.filter((desc) => desc.trim() !== "").length > 0
+                ? descriptionsEn.filter((desc) => desc.trim() !== "")
+                : null,
+            images: filteredImages.length > 0 ? filteredImages : null,
+            actions: actions.filter((a) => a.trim() !== ""),
+            actions_en:
+              actionsEn.filter((a) => a.trim() !== "").length > 0 ? actionsEn.filter((a) => a.trim() !== "") : null,
           })
           .eq("id", bingoCard.id)
 
@@ -117,9 +182,19 @@ export function BingoTab({ eventId }: BingoTabProps) {
           title: title || "Event Bingo",
           title_en: titleEn || null,
           items: filteredItems,
-          items_en: filteredItemsEn.length > 0 ? filteredItemsEn : null,
-          actions: filteredActions.length > 0 ? filteredActions : null,
-          actions_en: filteredActionsEn.length > 0 ? filteredActionsEn : null,
+          items_en:
+            itemsEn.filter((item) => item.trim() !== "").length > 0
+              ? itemsEn.filter((item) => item.trim() !== "")
+              : null,
+          descriptions: filteredDescriptions.length > 0 ? filteredDescriptions : null,
+          descriptions_en:
+            descriptionsEn.filter((desc) => desc.trim() !== "").length > 0
+              ? descriptionsEn.filter((desc) => desc.trim() !== "")
+              : null,
+          images: filteredImages.length > 0 ? filteredImages : null,
+          actions: actions.filter((a) => a.trim() !== ""),
+          actions_en:
+            actionsEn.filter((a) => a.trim() !== "").length > 0 ? actionsEn.filter((a) => a.trim() !== "") : null,
         })
 
         if (error) throw error
@@ -139,7 +214,9 @@ export function BingoTab({ eventId }: BingoTabProps) {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold">Event Bingo</h3>
-        <p className="text-sm text-muted-foreground">Create bingo items for guests (minimum 16 items recommended)</p>
+        <p className="text-sm text-muted-foreground">
+          Create bingo items with descriptions and images (25 items for 5x5 grid)
+        </p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
@@ -157,7 +234,7 @@ export function BingoTab({ eventId }: BingoTabProps) {
         <div className="flex items-center justify-between">
           <div>
             <h4 className="font-semibold">Actions & Challenges</h4>
-            <p className="text-sm text-muted-foreground">Optional instructions or challenges for guests</p>
+            <p className="text-sm text-muted-foreground">Optional instructions for guests</p>
           </div>
           <Button onClick={handleAddAction} variant="outline" size="sm">
             <Plus className="w-4 h-4 mr-2" />
@@ -204,7 +281,7 @@ export function BingoTab({ eventId }: BingoTabProps) {
         <div className="flex items-center justify-between">
           <div>
             <h4 className="font-semibold">Bingo Items</h4>
-            <p className="text-sm text-muted-foreground">Add items for the bingo card (25 items for 5x5 grid)</p>
+            <p className="text-sm text-muted-foreground">Add items with optional descriptions and images</p>
           </div>
           <Button onClick={handleAddItem} variant="outline" size="sm">
             <Plus className="w-4 h-4 mr-2" />
@@ -223,7 +300,7 @@ export function BingoTab({ eventId }: BingoTabProps) {
                       <Input
                         placeholder="Ktoś płacze ze szczęścia"
                         value={item}
-                        onChange={(e) => handleUpdateItem(index, e.target.value, "pl")}
+                        onChange={(e) => handleUpdateItem(index, "text", e.target.value, "pl")}
                       />
                     </div>
                     <div className="flex items-end">
@@ -232,13 +309,65 @@ export function BingoTab({ eventId }: BingoTabProps) {
                       </Button>
                     </div>
                   </div>
+
                   <div className="space-y-2">
                     <Label>Item {index + 1} (English)</Label>
                     <Input
                       placeholder="Someone cries happy tears"
                       value={itemsEn[index] || ""}
-                      onChange={(e) => handleUpdateItem(index, e.target.value, "en")}
+                      onChange={(e) => handleUpdateItem(index, "text", e.target.value, "en")}
                     />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Description (Polski)</Label>
+                    <Textarea
+                      placeholder="Dodaj opis tego wyzwania..."
+                      value={descriptions[index] || ""}
+                      onChange={(e) => handleUpdateItem(index, "desc", e.target.value, "pl")}
+                      rows={2}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Description (English)</Label>
+                    <Textarea
+                      placeholder="Add description of this challenge..."
+                      value={descriptionsEn[index] || ""}
+                      onChange={(e) => handleUpdateItem(index, "desc", e.target.value, "en")}
+                      rows={2}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Image</Label>
+                    {images[index] && (
+                      <div className="relative mb-2">
+                        <img
+                          src={images[index]! || "/placeholder.svg"}
+                          alt="Item preview"
+                          className="w-full h-32 object-cover rounded"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleUpdateItem(index, "image", null, "pl")}
+                          className="absolute top-1 right-1 bg-white/80 hover:bg-white"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                    <label className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-muted">
+                      <Upload className="w-4 h-4" />
+                      <span className="text-sm">Upload Image</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(index, e)}
+                        className="hidden"
+                      />
+                    </label>
                   </div>
                 </div>
               </CardContent>

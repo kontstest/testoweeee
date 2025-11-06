@@ -47,7 +47,7 @@ export function GuestEventPageClassic({ event }: GuestEventPageProps) {
       buttonText: t.photoOverlayButton || "Create",
       viewId: "photo-overlay",
       isPrimary: false,
-      enabled: event.module_photo_gallery && event.module_photo_gallery_visible,
+      enabled: event.module_photo_overlay && event.module_photo_overlay_visible,
     },
     {
       title: t.gallery,
@@ -175,33 +175,33 @@ export function GuestEventPageClassic({ event }: GuestEventPageProps) {
             </div>
 
             {event.hero_image_url && (
-            <div className="px-6 py-8">
-              <div className="relative w-full aspect-[2/3] mx-auto max-w-md">
-                <div
-                  className="absolute inset-0 overflow-hidden rounded-t-[10rem]"
-                  style={{
-                    outline: `4px solid ${secondaryColor}`,
-                    outlineOffset: "6px",
-                  }}
-                >
-                  <img
-                    src={event.hero_image_url || "/placeholder.svg"}
-                    alt={event.name}
-                    className="w-full h-full object-cover rounded-t-[10rem]"
-                    style={{
-                      objectPosition: event.hero_image_position || "center center",
-                    }}
-                  />
+              <div className="px-6 py-8">
+                <div className="relative w-full aspect-[2/3] mx-auto max-w-md">
                   <div
-                    className="absolute inset-0 rounded-t-[10rem]"
+                    className="absolute inset-0 overflow-hidden rounded-t-[10rem]"
                     style={{
-                      background: `linear-gradient(to bottom, ${secondaryColor}20, transparent 30%, transparent 70%, ${secondaryColor}20)`,
+                      outline: `4px solid ${secondaryColor}`,
+                      outlineOffset: "6px",
                     }}
-                  />
+                  >
+                    <img
+                      src={event.hero_image_url || "/placeholder.svg"}
+                      alt={event.name}
+                      className="w-full h-full object-cover rounded-t-[10rem]"
+                      style={{
+                        objectPosition: event.hero_image_position || "center center",
+                      }}
+                    />
+                    <div
+                      className="absolute inset-0 rounded-t-[10rem]"
+                      style={{
+                        background: `linear-gradient(to bottom, ${secondaryColor}20, transparent 30%, transparent 70%, ${secondaryColor}20)`,
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
             <AnimatePresence mode="wait">
               {!activeView && (
