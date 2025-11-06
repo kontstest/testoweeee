@@ -23,7 +23,7 @@ export const translations = {
       bingoDesc: "Zagraj z nami w BINGO i wygraj nagrody",
       bingoButton: "Zagraj w BINGO",
       survey: "Wypełnij ankietę",
-      surveyDesc: "Sprawdź na ile znasz parę młodą!".
+      surveyDesc: "Sprawdź na ile znasz parę młodą!",
       surveyButton: "Wypełnij ankietę",
       thanks: "Dziękujemy",
       thanksDesc: "że jesteście z nami w tym wyjątkowym dniu",
