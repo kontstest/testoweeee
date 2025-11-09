@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/client"
-import { useGuestAuth } from "@/lib/hooks/use-guest-auth"
-import { GuestAuthDialog } from "../guest-auth-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,16 +25,14 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
   const [guestName, setGuestName] = useState("")
   const [showNameInput, setShowNameInput] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [showAuthDialog, setShowAuthDialog] = useState(false)
   const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null)
   const [showItemModal, setShowItemModal] = useState(false)
-  const { user } = useGuestAuth()
   const supabase = createClient()
   const t = translations[language]?.modules?.bingo || translations.pl.modules.bingo
 
   useEffect(() => {
     loadBingo()
-  }, [eventId, user, language])
+  }, [eventId, language])
 
   const loadBingo = async () => {
     setIsLoading(true)
@@ -46,54 +42,25 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
     if (cardData) {
       setBingoCard(cardData)
 
-      if (user) {
-        const { data: progressData } = await supabase
-          .from("bingo_progress")
-          .select("*")
-          .eq("bingo_card_id", cardData.id)
-          .eq("guest_id", user.id)
-          .maybeSingle()
-
-        if (progressData) {
-          setProgress(progressData)
-          setCompletedItems(progressData.completed_items || [])
-          setGuestName(progressData.guest_name || "")
-          setShowNameInput(!progressData.guest_name)
-        } else {
-          setShowNameInput(true)
-        }
-      }
+      setShowNameInput(true)
     }
 
     setIsLoading(false)
   }
 
   const handleSaveName = async () => {
-    if (!user || !bingoCard || !guestName.trim()) return
+    if (!bingoCard || !guestName.trim()) return
 
     try {
-      if (progress) {
-        await supabase.from("bingo_progress").update({ guest_name: guestName }).eq("id", progress.id)
-
-        setProgress({ ...progress, guest_name: guestName })
-      } else {
-        const { data: newProgress } = await supabase
-          .from("bingo_progress")
-          .insert({
-            bingo_card_id: bingoCard.id,
-            guest_id: user.id,
-            guest_name: guestName,
-            completed_items: [],
-            is_winner: false,
-          })
-          .select()
-          .maybeSingle()
-
-        if (newProgress) {
-          setProgress(newProgress)
-        }
+      const sessionKey = `bingo_progress_${bingoCard.id}`
+      const sessionProgress = {
+        bingo_card_id: bingoCard.id,
+        guest_name: guestName,
+        completed_items: [],
+        is_winner: false,
       }
-
+      sessionStorage.setItem(sessionKey, JSON.stringify(sessionProgress))
+      setProgress(sessionProgress as any)
       setShowNameInput(false)
     } catch (error) {
       console.error(error)
@@ -106,7 +73,7 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
   }
 
   const handleCompleteItem = async (index: number) => {
-    if (!user || !progress || !bingoCard) return
+    if (!progress || !bingoCard) return
 
     const newCompletedItems = completedItems.includes(index)
       ? completedItems.filter((i) => i !== index)
@@ -116,17 +83,17 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
 
     const isWinner = checkBingo(newCompletedItems)
 
-    await supabase
-      .from("bingo_progress")
-      .update({
-        completed_items: newCompletedItems,
-        is_winner: isWinner,
-      })
-      .eq("id", progress.id)
+    const sessionKey = `bingo_progress_${bingoCard.id}`
+    const updatedProgress = {
+      ...progress,
+      completed_items: newCompletedItems,
+      is_winner: isWinner,
+    }
+    sessionStorage.setItem(sessionKey, JSON.stringify(updatedProgress))
+    setProgress(updatedProgress)
 
     if (isWinner && !progress.is_winner) {
       alert("🎉 BINGO! You won!")
-      setProgress({ ...progress, is_winner: true })
     }
 
     setShowItemModal(false)
@@ -165,27 +132,6 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
           <p className="text-muted-foreground">{t.loading}</p>
         </div>
       </div>
-    )
-  }
-
-  if (!user) {
-    return (
-      <Card>
-        <CardContent className="py-12 text-center">
-          <h3 className="text-lg font-semibold mb-2">Play Bingo</h3>
-          <p className="text-muted-foreground text-sm mb-4">Sign in to play</p>
-          <Button onClick={() => setShowAuthDialog(true)}>Sign In</Button>
-          <GuestAuthDialog
-            open={showAuthDialog}
-            onOpenChange={setShowAuthDialog}
-            onSuccess={() => {
-              setShowAuthDialog(false)
-              loadBingo()
-            }}
-            eventId={eventId}
-          />
-        </CardContent>
-      </Card>
     )
   }
 

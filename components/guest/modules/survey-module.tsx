@@ -8,8 +8,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { createClient } from "@/lib/supabase/client"
-import { useGuestAuth } from "@/lib/hooks/use-guest-auth"
-import { GuestAuthDialog } from "../guest-auth-dialog"
 import { CheckCircle2, Star } from "lucide-react"
 import { toast } from "react-toastify"
 import { translations } from "@/lib/i18n/translations"
@@ -30,18 +28,14 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [hasSubmitted, setHasSubmitted] = useState(false)
-  const [showAuthDialog, setShowAuthDialog] = useState(false)
-  const { user } = useGuestAuth()
   const supabase = createClient()
 
-  // Pobranie tłumaczeń ankiety z pliku translations
   const t = translations[language]?.modules?.survey ?? {}
-
   const safe = <K extends keyof typeof t>(key: K, fallback: string) => t[key] ?? fallback
 
   useEffect(() => {
     loadSurvey()
-  }, [eventId, user, language])
+  }, [eventId, language])
 
   const loadSurvey = async () => {
     setIsLoading(true)
@@ -63,16 +57,6 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
         .order("order_index", { ascending: true })
 
       if (questionsData) setQuestions(questionsData)
-
-      if (user) {
-        const { data: existingResponses } = await supabase
-          .from("survey_responses")
-          .select("question_id")
-          .eq("survey_id", surveyData.id)
-          .eq("guest_id", user.id)
-
-        if (existingResponses && existingResponses.length > 0) setHasSubmitted(true)
-      }
     }
 
     setIsLoading(false)
@@ -83,10 +67,6 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
   }
 
   const handleSubmit = async () => {
-    if (!user) {
-      setShowAuthDialog(true)
-      return
-    }
     if (!survey) return
 
     setIsSubmitting(true)
@@ -95,7 +75,7 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
       const responsesToInsert = Object.entries(responses).map(([questionId, responseText]) => ({
         survey_id: survey.id,
         question_id: questionId,
-        guest_id: user.id,
+        guest_id: null,
         response_text: responseText,
         guest_name: guestName || null,
       }))
@@ -152,8 +132,7 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
   }
 
   const surveyTitle = language === "en" && survey.title_en ? survey.title_en : survey.title
-  const surveyDescription =
-    language === "en" && survey.description_en ? survey.description_en : survey.description
+  const surveyDescription = language === "en" && survey.description_en ? survey.description_en : survey.description
 
   return (
     <div className="space-y-6">
@@ -183,9 +162,7 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
               <div className="space-y-4">
                 <Label className="text-base font-semibold">
                   {index + 1}.{" "}
-                  {language === "en" && question.question_text_en
-                    ? question.question_text_en
-                    : question.question_text}
+                  {language === "en" && question.question_text_en ? question.question_text_en : question.question_text}
                 </Label>
 
                 {question.question_type === "text" && (
@@ -233,9 +210,7 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
                         className="text-white"
                       >
                         <Star
-                          className={`w-5 h-5 ${
-                            responses[question.id] === rating.toString() ? "fill-current" : ""
-                          }`}
+                          className={`w-5 h-5 ${responses[question.id] === rating.toString() ? "fill-current" : ""}`}
                         />
                       </Button>
                     ))}
@@ -258,16 +233,6 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
           {isSubmitting ? safe("submitting", "Submitting...") : safe("submit", "Submit")}
         </Button>
       </div>
-
-      <GuestAuthDialog
-        open={showAuthDialog}
-        onOpenChange={setShowAuthDialog}
-        onSuccess={() => {
-          setShowAuthDialog(false)
-          loadSurvey()
-        }}
-        eventId={eventId}
-      />
     </div>
   )
 }
