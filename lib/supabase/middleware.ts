@@ -43,13 +43,12 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
+  const publicRoutes = ["/auth", "/event/", "/privacy-policy", "/terms", "/about"]
+
+  const isPublicRoute = publicRoutes.some((route) => request.nextUrl.pathname.startsWith(route))
+
   // Redirect unauthenticated users to login
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith("/auth") &&
-    !request.nextUrl.pathname.startsWith("/event/") &&
-    request.nextUrl.pathname !== "/"
-  ) {
+  if (!user && !isPublicRoute && request.nextUrl.pathname !== "/") {
     const url = request.nextUrl.clone()
     url.pathname = "/auth/login"
     return NextResponse.redirect(url)
