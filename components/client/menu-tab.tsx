@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
-import { createClient } from "@/lib/supabase/client"
 import { Plus, Trash2 } from "lucide-react"
 import type { MenuItem } from "@/lib/types/database"
 import { toast } from "sonner"
@@ -19,21 +18,20 @@ interface MenuTabProps {
 export function MenuTab({ eventId }: MenuTabProps) {
   const [items, setItems] = useState<MenuItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const supabase = createClient()
 
   useEffect(() => {
     loadMenu()
   }, [eventId])
 
   const loadMenu = async () => {
-    const { data } = await supabase
-      .from("menu_items")
-      .select("*")
-      .eq("event_id", eventId)
-      .order("order_index", { ascending: true })
-
-    if (data) {
-      setItems(data)
+    try {
+      const res = await fetch(`/api/events/${eventId}/menu`)
+      if (!res.ok) throw new Error("Failed to load menu")
+      const data = await res.json()
+      setItems(data || [])
+    } catch (error) {
+      console.error("[v0] Error loading menu:", error)
+      toast.error("Failed to load menu")
     }
   }
 
@@ -59,7 +57,11 @@ export function MenuTab({ eventId }: MenuTabProps) {
   const handleDelete = async (index: number) => {
     const item = items[index]
     if (item.id) {
-      await supabase.from("menu_items").delete().eq("id", item.id)
+      try {
+        await fetch(`/api/events/${eventId}/menu/${item.id}`, { method: "DELETE" })
+      } catch (error) {
+        console.error("[v0] Error deleting item:", error)
+      }
     }
     setItems(items.filter((_, i) => i !== index))
   }
@@ -68,10 +70,6 @@ export function MenuTab({ eventId }: MenuTabProps) {
     setIsLoading(true)
 
     try {
-      // Delete all existing items
-      await supabase.from("menu_items").delete().eq("event_id", eventId)
-
-      // Insert new items with bilingual support
       const itemsToInsert = items.map((item, index) => ({
         event_id: eventId,
         category: item.category,
@@ -82,9 +80,13 @@ export function MenuTab({ eventId }: MenuTabProps) {
         order_index: index,
       }))
 
-      const { error } = await supabase.from("menu_items").insert(itemsToInsert)
+      const res = await fetch(`/api/events/${eventId}/menu`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: itemsToInsert }),
+      })
 
-      if (error) throw error
+      if (!res.ok) throw new Error("Failed to save menu")
 
       await loadMenu()
       toast.success("Menu saved successfully!")

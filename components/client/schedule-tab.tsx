@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
-import { createClient } from "@/lib/supabase/client"
 import { Plus, Trash2, GripVertical } from "lucide-react"
 import type { ScheduleItem } from "@/lib/types/database"
 import { toast } from "sonner"
@@ -18,21 +17,20 @@ interface ScheduleTabProps {
 export function ScheduleTab({ eventId }: ScheduleTabProps) {
   const [items, setItems] = useState<ScheduleItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const supabase = createClient()
 
   useEffect(() => {
     loadSchedule()
   }, [eventId])
 
   const loadSchedule = async () => {
-    const { data } = await supabase
-      .from("schedule_items")
-      .select("*")
-      .eq("event_id", eventId)
-      .order("order_index", { ascending: true })
-
-    if (data) {
-      setItems(data)
+    try {
+      const res = await fetch(`/api/events/${eventId}/schedule`)
+      if (!res.ok) throw new Error("Failed to load schedule")
+      const data = await res.json()
+      setItems(data || [])
+    } catch (error) {
+      console.error("[v0] Error loading schedule:", error)
+      toast.error("Failed to load schedule")
     }
   }
 
@@ -58,7 +56,11 @@ export function ScheduleTab({ eventId }: ScheduleTabProps) {
   const handleDelete = async (index: number) => {
     const item = items[index]
     if (item.id) {
-      await supabase.from("schedule_items").delete().eq("id", item.id)
+      try {
+        await fetch(`/api/events/${eventId}/schedule/${item.id}`, { method: "DELETE" })
+      } catch (error) {
+        console.error("[v0] Error deleting item:", error)
+      }
     }
     setItems(items.filter((_, i) => i !== index))
   }
@@ -67,10 +69,6 @@ export function ScheduleTab({ eventId }: ScheduleTabProps) {
     setIsLoading(true)
 
     try {
-      // Delete all existing items
-      await supabase.from("schedule_items").delete().eq("event_id", eventId)
-
-      // Insert new items with bilingual support
       const itemsToInsert = items.map((item, index) => ({
         event_id: eventId,
         time: item.time,
@@ -81,9 +79,13 @@ export function ScheduleTab({ eventId }: ScheduleTabProps) {
         order_index: index,
       }))
 
-      const { error } = await supabase.from("schedule_items").insert(itemsToInsert)
+      const res = await fetch(`/api/events/${eventId}/schedule`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: itemsToInsert }),
+      })
 
-      if (error) throw error
+      if (!res.ok) throw new Error("Failed to save schedule")
 
       await loadSchedule()
       toast.success("Schedule saved successfully!")

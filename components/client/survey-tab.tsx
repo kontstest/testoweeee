@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
-import { createClient } from "@/lib/supabase/client"
 import { Plus, Trash2, X } from "lucide-react"
 import type { Survey, SurveyQuestion } from "@/lib/types/database"
 import { toast } from "sonner"
@@ -19,27 +18,21 @@ export function SurveyTab({ eventId }: SurveyTabProps) {
   const [survey, setSurvey] = useState<Survey | null>(null)
   const [questions, setQuestions] = useState<Partial<SurveyQuestion>[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const supabase = createClient()
 
   useEffect(() => {
     loadSurvey()
   }, [eventId])
 
   const loadSurvey = async () => {
-    const { data: surveyData } = await supabase.from("surveys").select("*").eq("event_id", eventId).maybeSingle()
-
-    if (surveyData) {
-      setSurvey(surveyData)
-
-      const { data: questionsData } = await supabase
-        .from("survey_questions")
-        .select("*")
-        .eq("survey_id", surveyData.id)
-        .order("order_index", { ascending: true })
-
-      if (questionsData) {
-        setQuestions(questionsData)
-      }
+    try {
+      const res = await fetch(`/api/events/${eventId}/surveys`)
+      if (!res.ok) throw new Error("Failed to load survey")
+      const { survey: surveyData, questions: questionsData } = await res.json()
+      if (surveyData) setSurvey(surveyData)
+      if (questionsData) setQuestions(questionsData)
+    } catch (error) {
+      console.error("[v0] Error loading survey:", error)
+      toast.error("Failed to load survey")
     }
   }
 
@@ -114,49 +107,33 @@ export function SurveyTab({ eventId }: SurveyTabProps) {
     setIsLoading(true)
 
     try {
-      let surveyId = survey?.id
-
-      // Create survey if it doesn't exist
-      if (!surveyId) {
-        const { data: newSurvey, error: surveyError } = await supabase
-          .from("surveys")
-          .insert({
-            event_id: eventId,
-            title: "Event Survey",
-            title_en: "Event Survey",
-            title_pl: "Event Survey",
-            description: "Share your feedback",
-            description_en: "Share your feedback",
-            description_pl: "Share your feedback",
-            is_active: true,
-          })
-          .select()
-          .maybeSingle()
-
-        if (surveyError) throw surveyError
-        surveyId = newSurvey.id
-        setSurvey(newSurvey)
+      const payload = {
+        title: "Event Survey",
+        title_en: "Event Survey",
+        title_pl: "Event Survey",
+        description: "Share your feedback",
+        description_en: "Share your feedback",
+        description_pl: "Share your feedback",
+        is_active: true,
+        questions: questions.map((q, index) => ({
+          question_text: q.question_text,
+          question_text_en: q.question_text_en || q.question_text,
+          question_text_pl: q.question_text_pl || q.question_text,
+          question_type: q.question_type,
+          options: q.options,
+          options_en: q.options_en || q.options,
+          options_pl: q.options_pl || q.options,
+          order_index: index,
+        })),
       }
 
-      // Delete existing questions
-      await supabase.from("survey_questions").delete().eq("survey_id", surveyId)
+      const res = await fetch(`/api/events/${eventId}/surveys`, {
+        method: survey ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
 
-      // Insert new questions with bilingual support
-      const questionsToInsert = questions.map((q, index) => ({
-        survey_id: surveyId,
-        question_text: q.question_text,
-        question_text_en: q.question_text_en || q.question_text,
-        question_text_pl: q.question_text_pl || q.question_text,
-        question_type: q.question_type,
-        options: q.options,
-        options_en: q.options_en || q.options,
-        options_pl: q.options_pl || q.options,
-        order_index: index,
-      }))
-
-      const { error } = await supabase.from("survey_questions").insert(questionsToInsert)
-
-      if (error) throw error
+      if (!res.ok) throw new Error("Failed to save survey")
 
       await loadSurvey()
       toast.success("Survey saved successfully!")
