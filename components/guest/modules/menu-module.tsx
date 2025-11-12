@@ -33,7 +33,7 @@ export function MenuModule({ eventId, primaryColor }: MenuModuleProps) {
       .select("*")
       .eq("event_id", eventId)
       .order("order_index", { ascending: true })
-
+    if (error) console.error("Supabase error:", error)
     if (data) {
       setItems(data)
     }
