@@ -1,10 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { query } from "@/lib/db/client"
-import { getAuthUser, verifyEventOwnership, isSuperAdmin, createClient } from "@/lib/auth"
+import { getAuthUser, verifyEventOwnership, isSuperAdmin, createClient } from "@/lib/api/auth-utils"
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ eventId: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: { eventId: string } }) {
   try {
-    const { eventId } = await params
+    const { eventId } = params
 
     const result = await query((client) =>
       client.from("schedule_items").select("*").eq("event_id", eventId).order("time", { ascending: true }),
@@ -20,9 +20,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ eventId: string }> }) {
+export async function POST(request: NextRequest, { params }: { params: { eventId: string } }) {
   try {
-    const { eventId } = await params
+    const { eventId } = params
     const user = await getAuthUser()
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
