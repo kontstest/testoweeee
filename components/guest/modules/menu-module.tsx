@@ -28,11 +28,12 @@ export function MenuModule({ eventId, primaryColor }: MenuModuleProps) {
   const loadMenu = async () => {
     setIsLoading(true)
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("menu_items")
       .select("*")
       .eq("event_id", eventId)
       .order("order_index", { ascending: true })
+
     if (error) console.error("Supabase error:", error)
     if (data) {
       setItems(data)
