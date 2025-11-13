@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Plus, LogOut, TrendingUp, Calendar, Archive } from "lucide-react"
 import { CreateEventDialog } from "./create-event-dialog"
 import { EventsTable } from "./events-table"
-import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { Toggle } from "@/components/ui/toggle"
 import { ModuleSelector } from "./module-selector"
@@ -21,30 +20,25 @@ export function AdminDashboard({ events: initialEvents }: AdminDashboardProps) {
   const [statusFilter, setStatusFilter] = useState("")
   const [moduleFilter, setModuleFilter] = useState("")
   const router = useRouter()
-  const supabase = createClient()
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
+    await fetch("/api/auth/logout", { method: "POST" })
     router.push("/")
   }
 
   const refreshEvents = async () => {
-    const { data } = await supabase
-      .from("events")
-      .select(`
-        *,
-        profiles:client_id (
-          email,
-          first_name,
-          last_name
-        )
-      `)
-      .order("created_at", { ascending: false })
-      .eq("status", statusFilter ? statusFilter : undefined)
-      .eq("module", moduleFilter ? moduleFilter : undefined)
+    try {
+      const params = new URLSearchParams()
+      if (statusFilter) params.append("status", statusFilter)
+      if (moduleFilter) params.append("module", moduleFilter)
 
-    if (data) {
-      setEvents(data)
+      const res = await fetch(`/api/events?${params.toString()}`)
+      if (!res.ok) throw new Error("Failed to fetch events")
+
+      const data = await res.json()
+      setEvents(data.events || [])
+    } catch (error) {
+      console.error("[v0] Error fetching events:", error)
     }
   }
 

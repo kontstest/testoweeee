@@ -25,7 +25,7 @@ import {
   AlignVerticalJustifyEnd,
 } from "lucide-react"
 import type { Event } from "@/lib/types/database"
-import { createClient } from "@/lib/supabase/client"
+// import { createClient } from "@/lib/supabase/client" // Removed Supabase client import
 import { toast } from "sonner"
 import QRCode from "qrcode"
 
@@ -212,7 +212,7 @@ export function QRTemplateGeneratorAdvanced({ event }: QRTemplateGeneratorAdvanc
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const qrBackgroundInputRef = useRef<HTMLInputElement>(null)
-  const supabase = createClient()
+  // const supabase = createClient() // Removed Supabase client initialization
 
   useEffect(() => {
     generateQRCode()
@@ -243,28 +243,12 @@ export function QRTemplateGeneratorAdvanced({ event }: QRTemplateGeneratorAdvanc
   }
 
   const loadSavedTemplates = async () => {
-    const { data } = await supabase
-      .from("qr_templates")
-      .select("*")
-      .eq("event_id", event.id)
-      .order("created_at", { ascending: false })
-
-    if (data) {
-      const templates = data.map((t) => ({
-        id: t.id,
-        name: t.name,
-        background: t.background_type === "color" ? t.background_value || "#ffffff" : "#ffffff",
-        backgroundImage: t.background_type === "image" ? t.background_value || undefined : undefined,
-        backgroundX: 50,
-        backgroundY: 50,
-        backgroundScale: 100,
-        elements: (t.elements as any[]) || [],
-        domainText: t.custom_text || "xyz.pl",
-        domainColor: t.primary_color,
-        domainFontSize: 14,
-        customCSS: t.custom_css,
-      }))
-      setSavedTemplates(templates)
+    try {
+      const response = await fetch(`/api/events/${event.id}/qr-templates`)
+      const data = await response.json()
+      setSavedTemplates(data)
+    } catch (error) {
+      console.error("[v0] Error loading templates:", error)
     }
   }
 
@@ -459,22 +443,24 @@ export function QRTemplateGeneratorAdvanced({ event }: QRTemplateGeneratorAdvanc
       custom_css: template.customCSS,
     }
 
-    if (template.id) {
-      const { error } = await supabase.from("qr_templates").update(templateData).eq("id", template.id)
-      if (error) {
-        toast.error("Nie udało się zaktualizować szablonu")
-      } else {
-        toast.success("Szablon został zaktualizowany")
-        loadSavedTemplates()
-      }
-    } else {
-      const { error } = await supabase.from("qr_templates").insert(templateData)
-      if (error) {
-        toast.error("Nie udało się zapisać szablonu")
-      } else {
-        toast.success("Szablon został zapisany")
-        loadSavedTemplates()
-      }
+    try {
+      const method = template.id ? "PUT" : "POST"
+      const url = template.id
+        ? `/api/events/${event.id}/qr-templates/${template.id}`
+        : `/api/events/${event.id}/qr-templates`
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(templateData),
+      })
+
+      if (!response.ok) throw new Error("Failed to save")
+
+      toast.success(template.id ? "Szablon został zaktualizowany" : "Szablon został zapisany")
+      loadSavedTemplates()
+    } catch (error) {
+      toast.error("Nie udało się zapisać szablonu")
     }
   }
 
@@ -486,12 +472,10 @@ export function QRTemplateGeneratorAdvanced({ event }: QRTemplateGeneratorAdvanc
   const deleteTemplate = async (id: string) => {
     toast.promise(
       (async () => {
-        const { error } = await supabase.from("qr_templates").delete().eq("id", id)
-        if (error) throw error
+        const response = await fetch(`/api/events/${event.id}/qr-templates/${id}`, { method: "DELETE" })
+        if (!response.ok) throw new Error("Failed to delete")
         loadSavedTemplates()
-        if (template.id === id) {
-          setTemplate(predefinedTemplates[0])
-        }
+        if (template.id === id) setTemplate(predefinedTemplates[0])
       })(),
       {
         loading: "Deleting template...",

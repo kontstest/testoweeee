@@ -8,7 +8,6 @@ import { useRouter } from "next/navigation"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useState } from "react"
 import { generateEventQRCodeUrl, getEventUrl } from "@/lib/utils/qr-code"
-import { deleteEvent } from "@/app/actions/admin"
 import { toast } from "sonner"
 
 interface EventsTableProps {
@@ -23,8 +22,15 @@ export function EventsTable({ events, onRefresh }: EventsTableProps) {
   const handleDelete = async (eventId: string) => {
     toast.promise(
       (async () => {
-        const result = await deleteEvent(eventId)
-        if (result.error) throw new Error(result.error)
+        const response = await fetch(`/api/events/${eventId}`, {
+          method: "DELETE",
+        })
+
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.message || "Failed to delete event")
+        }
+
         onRefresh()
       })(),
       {

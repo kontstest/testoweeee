@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { query } from "@/lib/db/client"
 import { getAuthUser, verifyEventOwnership, isSuperAdmin } from "@/lib/api/auth-utils"
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ eventId: string; itemId: string }> }) {
@@ -18,21 +18,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const body = await request.json()
-    const supabase = await createClient()
+    const result = await query((client) =>
+      client.from("schedule_items").update(body).eq("id", itemId).eq("event_id", eventId).select().single(),
+    )
 
-    const { data, error } = await supabase
-      .from("schedule_items")
-      .update(body)
-      .eq("id", itemId)
-      .eq("event_id", eventId)
-      .select()
-      .single()
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (result.error) {
+      return NextResponse.json({ error: result.error }, { status: 500 })
     }
 
-    return NextResponse.json({ data })
+    return NextResponse.json({ data: result.data })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
@@ -56,11 +50,12 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const supabase = await createClient()
-    const { error } = await supabase.from("schedule_items").delete().eq("id", itemId).eq("event_id", eventId)
+    const result = await query((client) =>
+      client.from("schedule_items").delete().eq("id", itemId).eq("event_id", eventId),
+    )
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (result.error) {
+      return NextResponse.json({ error: result.error }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })

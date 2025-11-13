@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { createClient } from "@/lib/supabase/client"
 import { Upload, ImageIcon, X, Check, Heart, User } from "lucide-react"
 import type { Photo } from "@/lib/types/database"
 import { useDropzone } from "react-dropzone"
@@ -35,7 +34,6 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
   const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([])
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
-  const supabase = createClient()
   const t = translations[language].modules.photoGallery
 
   useEffect(() => {
@@ -44,14 +42,12 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
 
   const loadPhotos = async () => {
     setIsLoading(true)
-    const { data } = await supabase
-      .from("photos")
-      .select("*")
-      .eq("event_id", eventId)
-      .order("created_at", { ascending: false })
-
-    if (data) {
+    try {
+      const response = await fetch(`/api/events/${eventId}/photos`)
+      const data = await response.json()
       setPhotos(data)
+    } catch (error) {
+      console.error("[v0] Error loading photos:", error)
     }
     setIsLoading(false)
   }
@@ -93,28 +89,18 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
 
     try {
       for (const pendingPhoto of pendingPhotos) {
-        const fileExt = pendingPhoto.file.name.split(".").pop()
-        const fileName = `${eventId}/guest-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+        const formData = new FormData()
+        formData.append("file", pendingPhoto.file)
+        formData.append("caption", pendingPhoto.caption)
+        formData.append("wishes", pendingPhoto.wishes)
+        formData.append("author_name", pendingPhoto.authorName)
 
-        const { error: uploadError } = await supabase.storage.from("event-photos").upload(fileName, pendingPhoto.file)
-
-        if (uploadError) throw uploadError
-
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("event-photos").getPublicUrl(fileName)
-
-        const { error: dbError } = await supabase.from("photos").insert({
-          event_id: eventId,
-          uploaded_by: null,
-          image_url: publicUrl,
-          caption: pendingPhoto.caption || null,
-          wishes: pendingPhoto.wishes || null,
-          author_name: pendingPhoto.authorName || null,
+        const response = await fetch(`/api/events/${eventId}/photos`, {
+          method: "POST",
+          body: formData,
         })
 
-        if (dbError) throw dbError
-        URL.revokeObjectURL(pendingPhoto.preview)
+        if (!response.ok) throw new Error("Failed to upload photo")
       }
 
       setPendingPhotos([])

@@ -2,6 +2,10 @@ import { createClient } from "@/lib/supabase/server"
 
 export { createClient }
 
+export async function getUser() {
+  return getAuthUser()
+}
+
 // Check if user is authenticated
 export async function getAuthUser() {
   const supabase = await createClient()

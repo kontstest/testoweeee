@@ -2,7 +2,6 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { createClient } from "@/lib/supabase/client"
 import type { Event } from "@/lib/types/database"
 import { toast } from "sonner"
 import { Eye, EyeOff } from "lucide-react"
@@ -17,32 +16,24 @@ const templates = [
     id: "classic",
     name: "Klasyczny",
     description: "Elegancka klasyka z zaokrągleniami",
-    nameEn: "Classic",
-    descriptionEn: "Elegant classic with rounded corners",
     colors: { bg: "from-pink-50 to-purple-50", accent: "bg-pink-600" },
   },
   {
     id: "elegant",
     name: "Elegancki",
     description: "Minimalistyczny elegancki styl",
-    nameEn: "Elegant",
-    descriptionEn: "Minimalist elegant style",
     colors: { bg: "from-slate-50 to-neutral-50", accent: "bg-slate-900" },
   },
   {
     id: "colorful",
     name: "Kolorowy",
     description: "Żywy, pełny życia i barw",
-    nameEn: "Colorful",
-    descriptionEn: "Vibrant, full of life and colors",
     colors: { bg: "from-yellow-50 via-orange-50 to-red-50", accent: "bg-orange-500" },
   },
   {
     id: "minimal",
     name: "Minimalistyczny",
     description: "Prosty, czysty i nowoczesny",
-    nameEn: "Minimal",
-    descriptionEn: "Simple, clean and modern",
     colors: { bg: "from-white to-gray-50", accent: "bg-gray-800" },
   },
 ]
@@ -52,16 +43,19 @@ export function TemplateSelectorTab({ event, onUpdate }: TemplateSelectorTabProp
   const [showHeroImage, setShowHeroImage] = useState(event.show_hero_image !== false)
   const [showBackgroundImage, setShowBackgroundImage] = useState(event.show_background_image !== false)
   const [isLoading, setIsLoading] = useState(false)
-  const supabase = createClient()
 
   const handleSelectTemplate = async (templateId: string) => {
     setSelectedTemplate(templateId)
     setIsLoading(true)
 
     try {
-      const { error } = await supabase.from("events").update({ guest_template: templateId }).eq("id", event.id)
+      const res = await fetch(`/api/events/${event.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ guest_template: templateId }),
+      })
 
-      if (error) throw error
+      if (!res.ok) throw new Error("Failed to change template")
 
       toast.success("Szablon zmieniony pomyślnie!")
       onUpdate()
@@ -79,9 +73,13 @@ export function TemplateSelectorTab({ event, onUpdate }: TemplateSelectorTabProp
     setIsLoading(true)
 
     try {
-      const { error } = await supabase.from("events").update({ show_hero_image: newValue }).eq("id", event.id)
+      const res = await fetch(`/api/events/${event.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ show_hero_image: newValue }),
+      })
 
-      if (error) throw error
+      if (!res.ok) throw new Error("Failed to toggle hero image")
 
       toast.success(newValue ? "Zdjęcie hero włączone" : "Zdjęcie hero wyłączone")
       onUpdate()
@@ -100,9 +98,13 @@ export function TemplateSelectorTab({ event, onUpdate }: TemplateSelectorTabProp
     setIsLoading(true)
 
     try {
-      const { error } = await supabase.from("events").update({ show_background_image: newValue }).eq("id", event.id)
+      const res = await fetch(`/api/events/${event.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ show_background_image: newValue }),
+      })
 
-      if (error) throw error
+      if (!res.ok) throw new Error("Failed to toggle background image")
 
       toast.success(newValue ? "Tło w tle włączone" : "Tło w tle wyłączone")
       onUpdate()

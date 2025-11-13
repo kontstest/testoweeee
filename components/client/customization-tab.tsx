@@ -6,7 +6,6 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { createClient } from "@/lib/supabase/client"
 import type { Event } from "@/lib/types/database"
 import { Upload, MoveHorizontal, MoveVertical, ImageIcon } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
@@ -52,8 +51,6 @@ export function CustomizationTab({ event, onUpdate }: CustomizationTabProps) {
     return y === "top" ? 0 : y === "bottom" ? 100 : 50
   })
 
-  const supabase = createClient()
-
   const handleHeroImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -79,44 +76,41 @@ export function CustomizationTab({ event, onUpdate }: CustomizationTabProps) {
 
       // Upload hero image if changed
       if (heroImage) {
-        const fileExt = heroImage.name.split(".").pop()
-        const fileName = `${event.id}-hero-${Date.now()}.${fileExt}`
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("event-images")
-          .upload(fileName, heroImage)
+        const formData = new FormData()
+        formData.append("file", heroImage)
+        formData.append("type", "hero")
 
-        if (uploadError) throw uploadError
-
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("event-images").getPublicUrl(fileName)
-
-        heroImageUrl = publicUrl
+        const uploadRes = await fetch(`/api/events/${event.id}/upload-image`, {
+          method: "POST",
+          body: formData,
+        })
+        if (!uploadRes.ok) throw new Error("Hero image upload failed")
+        const { url } = await uploadRes.json()
+        heroImageUrl = url
       }
 
       if (backgroundImage) {
-        const fileExt = backgroundImage.name.split(".").pop()
-        const fileName = `${event.id}-background-${Date.now()}.${fileExt}`
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("event-images")
-          .upload(fileName, backgroundImage)
+        const formData = new FormData()
+        formData.append("file", backgroundImage)
+        formData.append("type", "background")
 
-        if (uploadError) throw uploadError
-
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("event-images").getPublicUrl(fileName)
-
-        backgroundImageUrl = publicUrl
+        const uploadRes = await fetch(`/api/events/${event.id}/upload-image`, {
+          method: "POST",
+          body: formData,
+        })
+        if (!uploadRes.ok) throw new Error("Background image upload failed")
+        const { url } = await uploadRes.json()
+        backgroundImageUrl = url
       }
 
       const heroPosition = `${heroPositionX}% ${heroPositionY}%`
       const backgroundPosition = `${backgroundPositionX}% ${backgroundPositionY}%`
 
       // Update event
-      const { error } = await supabase
-        .from("events")
-        .update({
+      const res = await fetch(`/api/events/${event.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           primary_color: primaryColor,
           secondary_color: secondaryColor,
           content_background_color: contentBackgroundColor,
@@ -127,10 +121,10 @@ export function CustomizationTab({ event, onUpdate }: CustomizationTabProps) {
           background_opacity: backgroundOpacity,
           background_brightness: backgroundBrightness,
           background_position: backgroundPosition,
-        })
-        .eq("id", event.id)
+        }),
+      })
 
-      if (error) throw error
+      if (!res.ok) throw new Error("Failed to save customization")
 
       onUpdate()
       toast.success("Customization saved successfully!")

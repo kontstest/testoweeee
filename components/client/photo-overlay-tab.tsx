@@ -7,8 +7,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { createClient } from "@/lib/supabase/client"
-import { Loader2, Trash2, Edit2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import type { Event } from "@/lib/types/database"
 
@@ -41,7 +39,6 @@ export function PhotoOverlayTab({ event, onUpdate }: PhotoOverlayTabProps) {
     template_type: "simple" as "simple" | "elegant" | "festive",
   })
   const { toast } = useToast()
-  const supabase = createClient()
 
   useEffect(() => {
     loadOverlays()
@@ -49,98 +46,62 @@ export function PhotoOverlayTab({ event, onUpdate }: PhotoOverlayTabProps) {
 
   const loadOverlays = async () => {
     try {
-      const { data, error } = await supabase
-        .from("photo_overlays")
-        .select("*")
-        .eq("event_id", event.id)
-        .order("order_index", { ascending: true })
-
-      if (error) throw error
+      const res = await fetch(`/api/events/${event.id}/photo-overlays`)
+      if (!res.ok) throw new Error("Failed to load overlays")
+      const data = await res.json()
       setOverlays(data || [])
     } catch (error) {
-      console.error("Error loading overlays:", error)
+      console.error("[v0] Error loading overlays:", error)
     }
   }
 
   const handleSave = async () => {
     if (!formData.name.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter template name",
-        variant: "destructive",
-      })
+      toast({ title: "Error", description: "Please enter template name", variant: "destructive" })
       return
     }
 
     setLoading(true)
     try {
-      if (editingId) {
-        const { error } = await supabase
-          .from("photo_overlays")
-          .update({
-            name: formData.name,
-            description: formData.description,
-            template_type: formData.template_type,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", editingId)
+      const method = editingId ? "PUT" : "POST"
+      const url = editingId
+        ? `/api/events/${event.id}/photo-overlays/${editingId}`
+        : `/api/events/${event.id}/photo-overlays`
 
-        if (error) throw error
-        toast({
-          title: "Success",
-          description: "Template updated successfully",
-        })
-      } else {
-        const { error } = await supabase.from("photo_overlays").insert({
-          event_id: event.id,
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           name: formData.name,
           description: formData.description,
           template_type: formData.template_type,
-          is_active: true,
-          order_index: overlays.length,
-        })
+        }),
+      })
 
-        if (error) throw error
-        toast({
-          title: "Success",
-          description: "Template created successfully",
-        })
-      }
+      if (!res.ok) throw new Error("Failed to save template")
 
+      toast({ title: "Success", description: `Template ${editingId ? "updated" : "created"} successfully` })
       setFormData({ name: "", description: "", template_type: "simple" })
       setEditingId(null)
-      loadOverlays()
+      await loadOverlays()
     } catch (error) {
-      console.error("Error saving overlay:", error)
-      toast({
-        title: "Error",
-        description: "Failed to save template",
-        variant: "destructive",
-      })
+      console.error("[v0] Error saving overlay:", error)
+      toast({ title: "Error", description: "Failed to save template", variant: "destructive" })
     } finally {
       setLoading(false)
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this template?")) return
-
+    if (!confirm("Are you sure?")) return
     try {
-      const { error } = await supabase.from("photo_overlays").delete().eq("id", id)
-
-      if (error) throw error
-      toast({
-        title: "Success",
-        description: "Template deleted successfully",
-      })
-      loadOverlays()
+      const res = await fetch(`/api/events/${event.id}/photo-overlays/${id}`, { method: "DELETE" })
+      if (!res.ok) throw new Error("Failed to delete")
+      toast({ title: "Success", description: "Template deleted successfully" })
+      await loadOverlays()
     } catch (error) {
-      console.error("Error deleting overlay:", error)
-      toast({
-        title: "Error",
-        description: "Failed to delete template",
-        variant: "destructive",
-      })
+      console.error("[v0] Error deleting overlay:", error)
+      toast({ title: "Error", description: "Failed to delete template", variant: "destructive" })
     }
   }
 
@@ -206,12 +167,13 @@ export function PhotoOverlayTab({ event, onUpdate }: PhotoOverlayTabProps) {
 
           <div className="flex gap-2">
             <Button onClick={handleSave} disabled={loading}>
-              {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {loading && <span className="w-4 h-4 mr-2 animate-spin">Loading...</span>}
               {editingId ? "Update Template" : "Create Template"}
             </Button>
             {editingId && (
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => {
                   setEditingId(null)
                   setFormData({ name: "", description: "", template_type: "simple" })
@@ -242,10 +204,10 @@ export function PhotoOverlayTab({ event, onUpdate }: PhotoOverlayTabProps) {
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => handleEdit(overlay)}>
-                    <Edit2 className="w-4 h-4" />
+                    <span className="w-4 h-4">Edit</span>
                   </Button>
                   <Button variant="destructive" size="sm" onClick={() => handleDelete(overlay.id)}>
-                    <Trash2 className="w-4 h-4" />
+                    <span className="w-4 h-4">Delete</span>
                   </Button>
                 </div>
               </div>

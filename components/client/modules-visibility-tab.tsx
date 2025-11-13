@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { createClient } from "@/lib/supabase/client"
-import { Loader2, Eye, EyeOff } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import type { Event } from "@/lib/types/database"
 
@@ -27,7 +25,6 @@ export function ModulesVisibilityTab({ event, onUpdate }: ModulesVisibilityTabPr
     vendors: event.module_vendors_visible ?? true,
   })
   const { toast } = useToast()
-  const supabase = createClient()
   const isWedding = event.event_type === "wedding"
 
   const modules = [
@@ -89,9 +86,10 @@ export function ModulesVisibilityTab({ event, onUpdate }: ModulesVisibilityTabPr
   const handleSave = async () => {
     setLoading(true)
     try {
-      const { error } = await supabase
-        .from("events")
-        .update({
+      const res = await fetch(`/api/events/${event.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           module_photo_gallery_visible: visibility.photo_gallery,
           module_schedule_visible: visibility.schedule,
           module_menu_visible: visibility.menu,
@@ -99,10 +97,10 @@ export function ModulesVisibilityTab({ event, onUpdate }: ModulesVisibilityTabPr
           module_bingo_visible: visibility.bingo,
           module_photo_overlay_visible: visibility.photo_overlay,
           module_vendors_visible: visibility.vendors,
-        })
-        .eq("id", event.id)
+        }),
+      })
 
-      if (error) throw error
+      if (!res.ok) throw new Error("Failed to update visibility")
 
       toast({
         title: "Success",
@@ -110,7 +108,7 @@ export function ModulesVisibilityTab({ event, onUpdate }: ModulesVisibilityTabPr
       })
       onUpdate()
     } catch (error) {
-      console.error("Error updating visibility:", error)
+      console.error("[v0] Error updating visibility:", error)
       toast({
         title: "Error",
         description: "Failed to update module visibility",
@@ -154,9 +152,9 @@ export function ModulesVisibilityTab({ event, onUpdate }: ModulesVisibilityTabPr
               </div>
               <div className="flex items-center gap-2">
                 {visibility[module.key] ? (
-                  <Eye className="w-4 h-4 text-green-600" />
+                  <span className="w-4 h-4 text-green-600">👁️</span>
                 ) : (
-                  <EyeOff className="w-4 h-4 text-gray-400" />
+                  <span className="w-4 h-4 text-gray-400">👁️‍🗨️</span>
                 )}
                 <Switch
                   id={module.key}
@@ -177,7 +175,7 @@ export function ModulesVisibilityTab({ event, onUpdate }: ModulesVisibilityTabPr
 
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={loading} size="lg">
-          {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          {loading && <span className="w-4 h-4 mr-2 animate-spin">🔄</span>}
           Save Visibility Settings
         </Button>
       </div>

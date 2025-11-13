@@ -8,10 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
-import { createClient } from "@/lib/supabase/client"
-import { Plus, Trash2, Upload, X } from "lucide-react"
-import type { BingoCard } from "@/lib/types/database"
 import { toast } from "sonner"
+import type { BingoCard } from "@/lib/types/database"
+import { Plus, Trash2, Upload, X } from "lucide-react"
 
 interface BingoTabProps {
   eventId: string
@@ -29,26 +28,32 @@ export function BingoTab({ eventId }: BingoTabProps) {
   const [actions, setActions] = useState<string[]>([])
   const [actionsEn, setActionsEn] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const supabase = createClient()
 
   useEffect(() => {
     loadBingo()
   }, [eventId])
 
   const loadBingo = async () => {
-    const { data } = await supabase.from("bingo_cards").select("*").eq("event_id", eventId).maybeSingle()
-
-    if (data) {
-      setBingoCard(data)
-      setTitle(data.title || "")
-      setTitleEn(data.title_en || "")
-      setItems(data.items || [])
-      setItemsEn(data.items_en || [])
-      setDescriptions(data.descriptions || [])
-      setDescriptionsEn(data.descriptions_en || [])
-      setImages(data.images || [])
-      setActions(data.actions || [])
-      setActionsEn(data.actions_en || [])
+    try {
+      const res = await fetch(`/api/events/${eventId}/bingo`)
+      if (res.ok) {
+        const data = await res.json()
+        const card = data.items?.[0] || null
+        if (card) {
+          setBingoCard(card)
+          setTitle(card.title || "")
+          setTitleEn(card.title_en || "")
+          setItems(card.items || [])
+          setItemsEn(card.items_en || [])
+          setDescriptions(card.descriptions || [])
+          setDescriptionsEn(card.descriptions_en || [])
+          setImages(card.images || [])
+          setActions(card.actions || [])
+          setActionsEn(card.actions_en || [])
+        }
+      }
+    } catch (error) {
+      console.error("[v0] Error loading bingo:", error)
     }
   }
 
@@ -107,14 +112,18 @@ export function BingoTab({ eventId }: BingoTabProps) {
 
     try {
       const fileName = `bingo-${Date.now()}-${file.name}`
-      const { data, error } = await supabase.storage.from("event-photos").upload(fileName, file)
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("fileName", fileName)
+
+      const { data, error } = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      }).then((res) => res.json())
 
       if (error) throw error
 
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("event-photos").getPublicUrl(fileName)
-      handleUpdateItem(index, "image", publicUrl, "pl")
+      handleUpdateItem(index, "image", data.publicUrl, "pl")
       toast.success("Image uploaded successfully")
     } catch (error) {
       console.error(error)
@@ -146,59 +155,38 @@ export function BingoTab({ eventId }: BingoTabProps) {
 
   const handleSave = async () => {
     setIsLoading(true)
-
     try {
       const filteredItems = items.filter((item) => item.trim() !== "")
       const filteredDescriptions = descriptions.filter((desc) => desc.trim() !== "")
       const filteredImages = images.filter((img) => img !== null)
 
-      if (bingoCard) {
-        const { error } = await supabase
-          .from("bingo_cards")
-          .update({
-            title: title || "Event Bingo",
-            title_en: titleEn || null,
-            items: filteredItems,
-            items_en:
-              itemsEn.filter((item) => item.trim() !== "").length > 0
-                ? itemsEn.filter((item) => item.trim() !== "")
-                : null,
-            descriptions: filteredDescriptions.length > 0 ? filteredDescriptions : null,
-            descriptions_en:
-              descriptionsEn.filter((desc) => desc.trim() !== "").length > 0
-                ? descriptionsEn.filter((desc) => desc.trim() !== "")
-                : null,
-            images: filteredImages.length > 0 ? filteredImages : null,
-            actions: actions.filter((a) => a.trim() !== ""),
-            actions_en:
-              actionsEn.filter((a) => a.trim() !== "").length > 0 ? actionsEn.filter((a) => a.trim() !== "") : null,
-          })
-          .eq("id", bingoCard.id)
-
-        if (error) throw error
-      } else {
-        const { error } = await supabase.from("bingo_cards").insert({
-          event_id: eventId,
-          title: title || "Event Bingo",
-          title_en: titleEn || null,
-          items: filteredItems,
-          items_en:
-            itemsEn.filter((item) => item.trim() !== "").length > 0
-              ? itemsEn.filter((item) => item.trim() !== "")
-              : null,
-          descriptions: filteredDescriptions.length > 0 ? filteredDescriptions : null,
-          descriptions_en:
-            descriptionsEn.filter((desc) => desc.trim() !== "").length > 0
-              ? descriptionsEn.filter((desc) => desc.trim() !== "")
-              : null,
-          images: filteredImages.length > 0 ? filteredImages : null,
-          actions: actions.filter((a) => a.trim() !== ""),
-          actions_en:
-            actionsEn.filter((a) => a.trim() !== "").length > 0 ? actionsEn.filter((a) => a.trim() !== "") : null,
-        })
-
-        if (error) throw error
+      const payload = {
+        title: title || "Event Bingo",
+        title_en: titleEn || null,
+        items: filteredItems,
+        items_en:
+          itemsEn.filter((item) => item.trim() !== "").length > 0 ? itemsEn.filter((item) => item.trim() !== "") : null,
+        descriptions: filteredDescriptions.length > 0 ? filteredDescriptions : null,
+        descriptions_en:
+          descriptionsEn.filter((desc) => desc.trim() !== "").length > 0
+            ? descriptionsEn.filter((desc) => desc.trim() !== "")
+            : null,
+        images: filteredImages.length > 0 ? filteredImages : null,
+        actions: actions.filter((a) => a.trim() !== ""),
+        actions_en:
+          actionsEn.filter((a) => a.trim() !== "").length > 0 ? actionsEn.filter((a) => a.trim() !== "") : null,
       }
+
+      const method = bingoCard ? "PUT" : "POST"
+      const url = bingoCard ? `/api/events/${eventId}/bingo/${bingoCard.id}` : `/api/events/${eventId}/bingo`
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+
+      if (!res.ok) throw new Error("Failed to save bingo")
 
       await loadBingo()
       toast.success("Bingo card saved successfully!")

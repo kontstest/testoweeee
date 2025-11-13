@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -11,9 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Download, Save, Edit, Trash2, ImageIcon, Type, QrCode } from "lucide-react"
 import type { Event, QRTemplate, Vendor } from "@/lib/types/database"
-import { createClient } from "@/lib/supabase/client"
-import { useToast } from "@/hooks/use-toast"
 import QRCode from "qrcode"
+import { useToast } from "@/components/ui/use-toast" // Import useToast
 
 interface QRTemplateGeneratorProps {
   event: Event
@@ -55,8 +53,22 @@ export function QRTemplateGenerator({ event }: QRTemplateGeneratorProps) {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("")
 
   const canvasRef = useRef<HTMLDivElement>(null)
-  const supabase = createClient()
   const { toast } = useToast()
+
+  const loadTemplate = (template: QRTemplate) => {
+    setCurrentTemplate(template)
+    setTemplateName(template.name)
+    setStyle(template.style as TemplateStyle)
+    setPrimaryColor(template.primary_color)
+    setSecondaryColor(template.secondary_color)
+    setBackgroundType(template.background_type as "color" | "image")
+    setBackgroundColor(template.background_type === "color" ? template.background_value : "#ffffff")
+    setBackgroundImage(template.background_type === "image" ? template.background_value : null)
+    setQrBackgroundColor(template.qr_background_color)
+    setCustomText(template.custom_text)
+    setIncludeVendors(template.include_vendors)
+    setElements(template.elements)
+  } // Declare loadTemplate function
 
   useEffect(() => {
     fetchTemplates()
@@ -69,17 +81,23 @@ export function QRTemplateGenerator({ event }: QRTemplateGeneratorProps) {
   }, [qrBackgroundColor])
 
   const fetchTemplates = async () => {
-    const { data } = await supabase
-      .from("qr_templates")
-      .select("*")
-      .eq("event_id", event.id)
-      .order("created_at", { ascending: false })
-    if (data) setTemplates(data)
+    try {
+      const response = await fetch(`/api/events/${event.id}/qr-templates`)
+      const data = await response.json()
+      setTemplates(data)
+    } catch (error) {
+      console.error("[v0] Error fetching templates:", error)
+    }
   }
 
   const fetchVendors = async () => {
-    const { data } = await supabase.from("vendors").select("*").eq("event_id", event.id).order("category")
-    if (data) setVendors(data)
+    try {
+      const response = await fetch(`/api/events/${event.id}/vendors`)
+      const data = await response.json()
+      setVendors(data)
+    } catch (error) {
+      console.error("[v0] Error fetching vendors:", error)
+    }
   }
 
   const generateQRCode = async () => {
@@ -139,55 +157,42 @@ export function QRTemplateGenerator({ event }: QRTemplateGeneratorProps) {
       elements: elements,
     }
 
-    if (currentTemplate) {
-      const { error } = await supabase.from("qr_templates").update(templateData).eq("id", currentTemplate.id)
-      if (error) {
-        toast({ title: "Błąd", description: "Nie udało się zapisać szablonu", variant: "destructive" })
-      } else {
-        toast({ title: "Sukces", description: "Szablon został zaktualizowany" })
-        fetchTemplates()
-      }
-    } else {
-      const { error } = await supabase.from("qr_templates").insert(templateData)
-      if (error) {
-        toast({ title: "Błąd", description: "Nie udało się zapisać szablonu", variant: "destructive" })
-      } else {
-        toast({ title: "Sukces", description: "Szablon został zapisany" })
-        fetchTemplates()
-      }
-    }
-  }
+    try {
+      const method = currentTemplate ? "PUT" : "POST"
+      const url = currentTemplate
+        ? `/api/events/${event.id}/qr-templates/${currentTemplate.id}`
+        : `/api/events/${event.id}/qr-templates`
 
-  const loadTemplate = (template: QRTemplate) => {
-    setCurrentTemplate(template)
-    setTemplateName(template.name)
-    setStyle(template.style as TemplateStyle)
-    setPrimaryColor(template.primary_color)
-    setSecondaryColor(template.secondary_color)
-    setBackgroundType(template.background_type)
-    if (template.background_type === "color") {
-      setBackgroundColor(template.background_value || "#ffffff")
-    } else {
-      setBackgroundImage(template.background_value)
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(templateData),
+      })
+
+      if (!response.ok) throw new Error("Failed to save template")
+
+      toast({
+        title: "Sukces",
+        description: currentTemplate ? "Szablon został zaktualizowany" : "Szablon został zapisany",
+      })
+      fetchTemplates()
+    } catch (error) {
+      toast({ title: "Błąd", description: "Nie udało się zapisać szablonu", variant: "destructive" })
     }
-    setQrBackgroundColor(template.qr_background_color || "#ffffff")
-    setCustomText(template.custom_text || "")
-    setIncludeVendors(template.include_vendors)
-    setElements(template.elements as DraggableElement[])
   }
 
   const deleteTemplate = async (id: string) => {
     if (!confirm("Czy na pewno chcesz usunąć ten szablon?")) return
 
-    const { error } = await supabase.from("qr_templates").delete().eq("id", id)
-    if (error) {
-      toast({ title: "Błąd", description: "Nie udało się usunąć szablonu", variant: "destructive" })
-    } else {
+    try {
+      const response = await fetch(`/api/events/${event.id}/qr-templates/${id}`, { method: "DELETE" })
+      if (!response.ok) throw new Error("Failed to delete")
+
       toast({ title: "Sukces", description: "Szablon został usunięty" })
       fetchTemplates()
-      if (currentTemplate?.id === id) {
-        setCurrentTemplate(null)
-      }
+      if (currentTemplate?.id === id) setCurrentTemplate(null)
+    } catch (error) {
+      toast({ title: "Błąd", description: "Nie udało się usunąć szablonu", variant: "destructive" })
     }
   }
 
@@ -513,7 +518,7 @@ export function QRTemplateGenerator({ event }: QRTemplateGeneratorProps) {
                         <Download className="w-4 h-4 mr-1" />
                         Pobierz
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => deleteTemplate(template.id)}>
+                      <Button size="sm" variant="outline" onClick={async () => deleteTemplate(template.id)}>
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>

@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { createClient } from "@/lib/supabase/client"
 import { UtensilsCrossed, Wine, Cake, Coffee } from "lucide-react"
 import { translations } from "@/lib/i18n/translations"
 import type { MenuItem } from "@/lib/types/database"
@@ -18,7 +17,6 @@ export function MenuModule({ eventId, primaryColor }: MenuModuleProps) {
   const { language } = useLanguage()
   const [items, setItems] = useState<MenuItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const supabase = createClient()
   const t = translations[language].modules.menu
 
   useEffect(() => {
@@ -28,15 +26,13 @@ export function MenuModule({ eventId, primaryColor }: MenuModuleProps) {
   const loadMenu = async () => {
     setIsLoading(true)
 
-    const { data, error } = await supabase
-      .from("menu_items")
-      .select("*")
-      .eq("event_id", eventId)
-      .order("order_index", { ascending: true })
-
-    if (error) console.error("Supabase error:", error)
-    if (data) {
-      setItems(data)
+    try {
+      const res = await fetch(`/api/events/${eventId}/menu`)
+      if (!res.ok) throw new Error("Failed to load menu")
+      const data = await res.json()
+      setItems(data || [])
+    } catch (error) {
+      console.error("[v0] Error loading menu:", error)
     }
 
     setIsLoading(false)

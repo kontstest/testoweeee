@@ -16,7 +16,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { createEventWithClient } from "@/app/actions/admin"
 
 interface CreateEventDialogProps {
   open: boolean
@@ -53,25 +52,31 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
     setError(null)
 
     try {
-      const result = await createEventWithClient({
-        name: formData.name,
-        eventDate: formData.eventDate,
-        eventType: formData.eventType,
-        clientEmail: formData.clientEmail,
-        clientFirstName: formData.clientFirstName,
-        clientLastName: formData.clientLastName,
-        clientPassword: formData.clientPassword,
-        modules: formData.modules,
+      const response = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          eventDate: formData.eventDate,
+          eventType: formData.eventType,
+          clientEmail: formData.clientEmail,
+          clientFirstName: formData.clientFirstName,
+          clientLastName: formData.clientLastName,
+          clientPassword: formData.clientPassword,
+          modules: formData.modules,
+        }),
       })
 
-      if (result.error) {
-        throw new Error(result.error)
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || "Failed to create event")
       }
 
+      const result = await response.json()
+
       console.log("[v0] Client created:", {
-        email: result.data?.clientEmail,
-        password: result.data?.clientPassword,
-        eventId: result.data?.event.id,
+        email: result.clientEmail,
+        eventId: result.event.id,
       })
 
       setFormData({

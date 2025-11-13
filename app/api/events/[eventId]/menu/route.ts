@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { query } from "@/lib/db/client"
 import { getAuthUser, verifyEventOwnership, isSuperAdmin, isEventAccessible } from "@/lib/api/auth-utils"
 
 // GET /api/events/[eventId]/menu - Get menu items (public)
@@ -12,18 +12,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Event not accessible" }, { status: 403 })
     }
 
-    const supabase = await createClient()
-    const { data, error } = await supabase
-      .from("menu_items")
-      .select("*")
-      .eq("event_id", eventId)
-      .order("order_index", { ascending: true })
+    const result = await query((client) =>
+      client.from("menu_items").select("*").eq("event_id", eventId).order("order_index", { ascending: true }),
+    )
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (result.error) {
+      return NextResponse.json({ error: result.error }, { status: 500 })
     }
 
-    return NextResponse.json({ data: data || [] })
+    return NextResponse.json({ data: result.data || [] })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
@@ -46,27 +43,28 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     const body = await request.json()
-    const supabase = await createClient()
 
-    const { data, error } = await supabase
-      .from("menu_items")
-      .insert({
-        event_id: eventId,
-        name: body.name,
-        name_en: body.name_en,
-        description: body.description,
-        description_en: body.description_en,
-        category: body.category,
-        order_index: body.order_index || 0,
-      })
-      .select()
-      .single()
+    const result = await query((client) =>
+      client
+        .from("menu_items")
+        .insert({
+          event_id: eventId,
+          name: body.name,
+          name_en: body.name_en,
+          description: body.description,
+          description_en: body.description_en,
+          category: body.category,
+          order_index: body.order_index || 0,
+        })
+        .select()
+        .single(),
+    )
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (result.error) {
+      return NextResponse.json({ error: result.error }, { status: 500 })
     }
 
-    return NextResponse.json({ data }, { status: 201 })
+    return NextResponse.json({ data: result.data }, { status: 201 })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,9 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Progress } from "@/components/ui/progress"
 import { Calendar, DollarSign, CheckSquare, Plus, Trash2, AlertCircle } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
-import type { WeddingBudget, WeddingExpense, WeddingChecklistItem } from "@/lib/types/database"
 import { useToast } from "@/hooks/use-toast"
+import type { WeddingBudget, WeddingExpense, WeddingChecklistItem } from "@/types/wedding"
 
 interface WeddingPlanningTabProps {
   eventId: string
@@ -45,7 +43,6 @@ export function WeddingPlanningTab({ eventId }: WeddingPlanningTabProps) {
   const [checklist, setChecklist] = useState<WeddingChecklistItem[]>([])
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
-  const supabase = createClient()
 
   useEffect(() => {
     fetchData()
@@ -54,100 +51,110 @@ export function WeddingPlanningTab({ eventId }: WeddingPlanningTabProps) {
   const fetchData = async () => {
     setLoading(true)
 
-    const [budgetRes, expensesRes, checklistRes] = await Promise.all([
-      supabase.from("wedding_budget").select("*").eq("event_id", eventId).maybeSingle(),
-      supabase.from("wedding_expenses").select("*").eq("event_id", eventId).order("category"),
-      supabase.from("wedding_checklist").select("*").eq("event_id", eventId).order("order_index"),
-    ])
+    try {
+      const [budgetRes, expensesRes, checklistRes] = await Promise.all([
+        fetch(`/api/events/${eventId}/wedding/budget`).then((r) => r.json()),
+        fetch(`/api/events/${eventId}/wedding/expenses`).then((r) => r.json()),
+        fetch(`/api/events/${eventId}/wedding/checklist`).then((r) => r.json()),
+      ])
 
-    if (budgetRes.data) setBudget(budgetRes.data)
-    if (expensesRes.data) setExpenses(expensesRes.data)
-    if (checklistRes.data) setChecklist(checklistRes.data)
+      if (budgetRes) setBudget(budgetRes)
+      if (expensesRes) setExpenses(expensesRes)
+      if (checklistRes) setChecklist(checklistRes)
+    } catch (error) {
+      console.error("[v0] Error fetching wedding data:", error)
+    }
 
     setLoading(false)
   }
 
   const updateBudget = async (totalBudget: number, notes: string) => {
-    const { error } = await supabase
-      .from("wedding_budget")
-      .update({ total_budget: totalBudget, notes })
-      .eq("event_id", eventId)
+    try {
+      const response = await fetch(`/api/events/${eventId}/wedding/budget`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ total_budget: totalBudget, notes }),
+      })
 
-    if (error) {
-      toast({ title: "Error", description: "Failed to update budget", variant: "destructive" })
-    } else {
+      if (!response.ok) throw new Error("Failed to update")
+
       toast({ title: "Success", description: "Budget updated" })
       fetchData()
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to update budget", variant: "destructive" })
     }
   }
 
   const addExpense = async (expense: Partial<WeddingExpense>) => {
-    const { error } = await supabase.from("wedding_expenses").insert({
-      event_id: eventId,
-      ...expense,
-    })
+    try {
+      const response = await fetch(`/api/events/${eventId}/wedding/expenses`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(expense),
+      })
 
-    if (error) {
-      toast({ title: "Error", description: "Failed to add expense", variant: "destructive" })
-    } else {
+      if (!response.ok) throw new Error("Failed to add")
+
       toast({ title: "Success", description: "Expense added" })
       fetchData()
-    }
-  }
-
-  const updateExpense = async (id: string, updates: Partial<WeddingExpense>) => {
-    const { error } = await supabase.from("wedding_expenses").update(updates).eq("id", id)
-
-    if (error) {
-      toast({ title: "Error", description: "Failed to update expense", variant: "destructive" })
-    } else {
-      fetchData()
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to add expense", variant: "destructive" })
     }
   }
 
   const deleteExpense = async (id: string) => {
-    const { error } = await supabase.from("wedding_expenses").delete().eq("id", id)
+    try {
+      const response = await fetch(`/api/events/${eventId}/wedding/expenses/${id}`, { method: "DELETE" })
+      if (!response.ok) throw new Error("Failed to delete")
 
-    if (error) {
-      toast({ title: "Error", description: "Failed to delete expense", variant: "destructive" })
-    } else {
       toast({ title: "Success", description: "Expense deleted" })
       fetchData()
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to delete expense", variant: "destructive" })
     }
   }
 
   const toggleChecklistItem = async (id: string, completed: boolean) => {
-    const { error } = await supabase.from("wedding_checklist").update({ completed }).eq("id", id)
+    try {
+      const response = await fetch(`/api/events/${eventId}/wedding/checklist/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completed }),
+      })
 
-    if (error) {
-      toast({ title: "Error", description: "Failed to update task", variant: "destructive" })
-    } else {
+      if (!response.ok) throw new Error("Failed to update")
       fetchData()
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to update task", variant: "destructive" })
     }
   }
 
   const addChecklistItem = async (item: Partial<WeddingChecklistItem>) => {
-    const { error } = await supabase.from("wedding_checklist").insert({
-      event_id: eventId,
-      ...item,
-    })
+    try {
+      const response = await fetch(`/api/events/${eventId}/wedding/checklist`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(item),
+      })
 
-    if (error) {
-      toast({ title: "Error", description: "Failed to add task", variant: "destructive" })
-    } else {
+      if (!response.ok) throw new Error("Failed to add")
+
       toast({ title: "Success", description: "Task added" })
       fetchData()
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to add task", variant: "destructive" })
     }
   }
 
   const deleteChecklistItem = async (id: string) => {
-    const { error } = await supabase.from("wedding_checklist").delete().eq("id", id)
+    try {
+      const response = await fetch(`/api/events/${eventId}/wedding/checklist/${id}`, { method: "DELETE" })
+      if (!response.ok) throw new Error("Failed to delete")
 
-    if (error) {
-      toast({ title: "Error", description: "Failed to delete task", variant: "destructive" })
-    } else {
       toast({ title: "Success", description: "Task deleted" })
       fetchData()
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to delete task", variant: "destructive" })
     }
   }
 
@@ -274,7 +281,7 @@ export function WeddingPlanningTab({ eventId }: WeddingPlanningTabProps) {
         </TabsContent>
 
         <TabsContent value="expenses" className="space-y-4">
-          <ExpensesTab expenses={expenses} onAdd={addExpense} onUpdate={updateExpense} onDelete={deleteExpense} />
+          <ExpensesTab expenses={expenses} onAdd={addExpense} onDelete={deleteExpense} />
         </TabsContent>
 
         <TabsContent value="checklist" className="space-y-4">
@@ -345,12 +352,10 @@ function BudgetTab({
 function ExpensesTab({
   expenses,
   onAdd,
-  onUpdate,
   onDelete,
 }: {
   expenses: WeddingExpense[]
   onAdd: (expense: Partial<WeddingExpense>) => void
-  onUpdate: (id: string, updates: Partial<WeddingExpense>) => void
   onDelete: (id: string) => void
 }) {
   const [showForm, setShowForm] = useState(false)

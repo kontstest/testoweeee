@@ -19,7 +19,6 @@ import {
   Zap,
   BarChart3,
 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import type { Event } from "@/lib/types/database"
 import { CustomizationTab } from "./customization-tab"
@@ -35,9 +34,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { generateEventQRCodeUrl, getEventUrl } from "@/lib/utils/qr-code"
 import { QRTemplateGeneratorAdvanced } from "./qr-template-generator-advanced"
 import { AdvancedSettingsTab } from "./advanced-settings-tab"
-import { TemplateSelectorTab } from "./template-selector-tab" // Added import
-import { SurveyResponsesTab } from "./survey-responses-tab" // Added import
-import { BingoResponsesTab } from "./bingo-responses-tab" // Added import
+import { TemplateSelectorTab } from "./template-selector-tab"
+import { SurveyResponsesTab } from "./survey-responses-tab"
+import { BingoResponsesTab } from "./bingo-responses-tab"
 import { cn } from "@/lib/utils"
 
 interface ClientDashboardProps {
@@ -52,21 +51,26 @@ export function ClientDashboardSidebar({ events: initialEvents, userId }: Client
   const [activeTab, setActiveTab] = useState("customization")
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push("/")
+    try {
+      await fetch("/api/auth/logout", { method: "POST" })
+      router.push("/")
+    } catch (error) {
+      console.error("[v0] Logout error:", error)
+    }
   }
 
   const refreshEvent = async () => {
     if (!selectedEvent) return
-
-    const { data } = await supabase.from("events").select("*").eq("id", selectedEvent.id).single()
-
-    if (data) {
+    try {
+      const res = await fetch(`/api/events/${selectedEvent.id}`)
+      if (!res.ok) throw new Error("Failed to fetch event")
+      const data = await res.json()
       setSelectedEvent(data)
       setEvents(events.map((e) => (e.id === data.id ? data : e)))
+    } catch (error) {
+      console.error("[v0] Error refreshing event:", error)
     }
   }
 

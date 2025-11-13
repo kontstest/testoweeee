@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
-import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import type { Event } from "@/lib/types/database"
 import { Save, Code, Sparkles } from "lucide-react"
@@ -19,35 +18,37 @@ export function AdvancedSettingsTab({ event, onUpdate }: AdvancedSettingsTabProp
   const [customCSS, setCustomCSS] = useState("")
   const [customJS, setCustomJS] = useState("")
   const [saving, setSaving] = useState(false)
-  const supabase = createClient()
 
   useEffect(() => {
     loadSettings()
   }, [event.id])
 
   const loadSettings = async () => {
-    // Load custom CSS/JS from event settings or a separate table
-    // For now, we'll use event's custom fields if they exist
-    const { data } = await supabase.from("events").select("custom_css, custom_js").eq("id", event.id).single()
-
-    if (data) {
-      setCustomCSS((data as any).custom_css || "")
-      setCustomJS((data as any).custom_js || "")
+    try {
+      const res = await fetch(`/api/events/${event.id}`)
+      if (res.ok) {
+        const data = await res.json()
+        setCustomCSS(data.custom_css || "")
+        setCustomJS(data.custom_js || "")
+      }
+    } catch (error) {
+      console.error("[v0] Error loading settings:", error)
     }
   }
 
   const handleSave = async () => {
     setSaving(true)
     try {
-      const { error } = await supabase
-        .from("events")
-        .update({
+      const res = await fetch(`/api/events/${event.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           custom_css: customCSS,
           custom_js: customJS,
-        })
-        .eq("id", event.id)
+        }),
+      })
 
-      if (error) throw error
+      if (!res.ok) throw new Error("Failed to save")
 
       toast.success("Ustawienia zaawansowane zostały zapisane")
       onUpdate()

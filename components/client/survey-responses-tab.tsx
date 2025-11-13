@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { createClient } from "@/lib/supabase/client"
 import { BarChart3, MessageSquare } from "lucide-react"
 import type { Survey, SurveyQuestion, SurveyResponse } from "@/lib/types/database"
 
@@ -17,7 +16,6 @@ export function SurveyResponsesTab({ eventId }: SurveyResponsesTabProps) {
   const [questions, setQuestions] = useState<SurveyQuestion[]>([])
   const [responses, setResponses] = useState<SurveyResponse[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const supabase = createClient()
 
   useEffect(() => {
     loadSurveys()
@@ -25,35 +23,40 @@ export function SurveyResponsesTab({ eventId }: SurveyResponsesTabProps) {
 
   const loadSurveys = async () => {
     setIsLoading(true)
-    const { data: surveysData } = await supabase
-      .from("surveys")
-      .select("*")
-      .eq("event_id", eventId)
-      .order("created_at", { ascending: false })
+    try {
+      const res = await fetch(`/api/events/${eventId}/surveys`)
+      if (!res.ok) throw new Error("Failed to load surveys")
+      const surveysData = await res.json()
 
-    if (surveysData && surveysData.length > 0) {
-      setSurveys(surveysData)
-      setSelectedSurvey(surveysData[0])
-      await loadResponses(surveysData[0].id)
+      if (surveysData && surveysData.length > 0) {
+        setSurveys(surveysData)
+        setSelectedSurvey(surveysData[0])
+        await loadResponses(surveysData[0].id)
+      }
+    } catch (error) {
+      console.error("[v0] Error loading surveys:", error)
+    } finally {
+      setIsLoading(false)
     }
-    setIsLoading(false)
   }
 
   const loadResponses = async (surveyId: string) => {
-    const { data: questionsData } = await supabase
-      .from("survey_questions")
-      .select("*")
-      .eq("survey_id", surveyId)
-      .order("order_index", { ascending: true })
+    try {
+      const questionsRes = await fetch(`/api/events/${eventId}/surveys/${surveyId}/questions`)
+      const responsesRes = await fetch(`/api/events/${eventId}/surveys/${surveyId}/responses`)
 
-    const { data: responsesData } = await supabase
-      .from("survey_responses")
-      .select("*")
-      .eq("survey_id", surveyId)
-      .order("created_at", { ascending: false })
+      if (questionsRes.ok) {
+        const questionsData = await questionsRes.json()
+        setQuestions(questionsData || [])
+      }
 
-    setQuestions(questionsData || [])
-    setResponses(responsesData || [])
+      if (responsesRes.ok) {
+        const responsesData = await responsesRes.json()
+        setResponses(responsesData || [])
+      }
+    } catch (error) {
+      console.error("[v0] Error loading responses:", error)
+    }
   }
 
   const handleSurveyChange = async (survey: Survey) => {

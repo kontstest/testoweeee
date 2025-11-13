@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { createClient } from "@/lib/supabase/client"
-import { ImageIcon } from "lucide-react"
-import type { Photo } from "@/lib/types/database"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
+import type { Photo } from "@/lib/types/database"
+import { ImageIcon } from "lucide-react"
 
 interface PhotoLibraryTabProps {
   eventId: string
@@ -15,7 +14,6 @@ export function PhotoLibraryTab({ eventId }: PhotoLibraryTabProps) {
   const [photos, setPhotos] = useState<Photo[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
-  const supabase = createClient()
 
   useEffect(() => {
     loadPhotos()
@@ -23,14 +21,13 @@ export function PhotoLibraryTab({ eventId }: PhotoLibraryTabProps) {
 
   const loadPhotos = async () => {
     setIsLoading(true)
-    const { data } = await supabase
-      .from("photos")
-      .select("*")
-      .eq("event_id", eventId)
-      .order("created_at", { ascending: false })
-
-    if (data) {
-      setPhotos(data)
+    try {
+      const res = await fetch(`/api/events/${eventId}/photos`)
+      if (!res.ok) throw new Error("Failed to load photos")
+      const data = await res.json()
+      setPhotos(data || [])
+    } catch (error) {
+      console.error("[v0] Error loading photos:", error)
     }
     setIsLoading(false)
   }

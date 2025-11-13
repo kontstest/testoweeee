@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { createClient } from "@/lib/supabase/client"
 import { Clock, CalendarIcon } from "lucide-react"
 import { translations } from "@/lib/i18n/translations"
 import type { ScheduleItem } from "@/lib/types/database"
@@ -17,7 +16,6 @@ export function ScheduleModule({ eventId, primaryColor }: ScheduleModuleProps) {
   const { language } = useLanguage()
   const [items, setItems] = useState<ScheduleItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const supabase = createClient()
   const t = translations[language].modules.schedule
 
   useEffect(() => {
@@ -27,15 +25,13 @@ export function ScheduleModule({ eventId, primaryColor }: ScheduleModuleProps) {
   const loadSchedule = async () => {
     setIsLoading(true)
 
-    const { data, error } = await supabase
-      .from("schedule_items")
-      .select("*")
-      .eq("event_id", eventId)
-      .order("time", { ascending: true })
-
-    if (error) console.error("Supabase error:", error)
-    if (data) {
-      setItems(data)
+    try {
+      const res = await fetch(`/api/events/${eventId}/schedule`)
+      if (!res.ok) throw new Error("Failed to load schedule")
+      const data = await res.json()
+      setItems(data || [])
+    } catch (error) {
+      console.error("[v0] Error loading schedule:", error)
     }
 
     setIsLoading(false)
@@ -80,7 +76,6 @@ export function ScheduleModule({ eventId, primaryColor }: ScheduleModuleProps) {
       </div>
 
       <div className="relative">
-        {/* Timeline line */}
         <div
           className="absolute left-4 md:left-8 top-0 bottom-0 w-0.5"
           style={{ backgroundColor: `${primaryColor}40` }}
@@ -92,7 +87,6 @@ export function ScheduleModule({ eventId, primaryColor }: ScheduleModuleProps) {
             const displayDescription = language === "en" && item.description_en ? item.description_en : item.description
             return (
               <div key={item.id} className="relative flex gap-3 md:gap-6 pl-12 md:pl-32">
-                {/* Time badge */}
                 <div className="absolute left-0 md:left-0 md:text-right md:w-24">
                   <div
                     className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-white font-semibold text-sm md:text-base"
@@ -103,13 +97,11 @@ export function ScheduleModule({ eventId, primaryColor }: ScheduleModuleProps) {
                   </div>
                 </div>
 
-                {/* Timeline dot */}
                 <div
                   className="absolute left-8 md:left-8 -translate-x-1/2 w-3 h-3 md:w-4 md:h-4 rounded-full border-4 border-white"
                   style={{ backgroundColor: primaryColor, top: "12px" }}
                 />
 
-                {/* Content */}
                 <Card className="flex-1">
                   <CardContent className="pt-6">
                     <h3 className="text-lg md:text-xl font-semibold mb-2">{displayTitle}</h3>

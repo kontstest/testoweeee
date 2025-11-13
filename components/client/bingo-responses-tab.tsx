@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { createClient } from "@/lib/supabase/client"
 import { Trophy } from "lucide-react"
 import type { BingoProgress } from "@/lib/types/database"
 
@@ -14,7 +13,6 @@ interface BingoResponsesTabProps {
 export function BingoResponsesTab({ eventId }: BingoResponsesTabProps) {
   const [responses, setResponses] = useState<BingoProgress[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const supabase = createClient()
 
   useEffect(() => {
     loadResponses()
@@ -23,19 +21,13 @@ export function BingoResponsesTab({ eventId }: BingoResponsesTabProps) {
   const loadResponses = async () => {
     setIsLoading(true)
     try {
-      const { data: cardData } = await supabase.from("bingo_cards").select("id").eq("event_id", eventId).maybeSingle()
-
-      if (cardData) {
-        const { data } = await supabase
-          .from("bingo_progress")
-          .select("*")
-          .eq("bingo_card_id", cardData.id)
-          .order("created_at", { ascending: false })
-
-        setResponses(data || [])
+      const res = await fetch(`/api/events/${eventId}/bingo/responses`)
+      if (res.ok) {
+        const data = await res.json()
+        setResponses(data.responses || [])
       }
     } catch (error) {
-      console.error(error)
+      console.error("[v0] Error loading bingo responses:", error)
     } finally {
       setIsLoading(false)
     }

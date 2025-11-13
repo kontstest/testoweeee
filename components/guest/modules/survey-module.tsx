@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
-import { createClient } from "@/lib/supabase/client"
 import { CheckCircle2, Star } from "lucide-react"
 import { toast } from "react-toastify"
 import { translations } from "@/lib/i18n/translations"
@@ -28,7 +27,6 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [hasSubmitted, setHasSubmitted] = useState(false)
-  const supabase = createClient()
 
   const t = translations[language]?.modules?.survey ?? {}
   const safe = <K extends keyof typeof t>(key: K, fallback: string) => t[key] ?? fallback
@@ -39,27 +37,25 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
 
   const loadSurvey = async () => {
     setIsLoading(true)
+    try {
+      const res = await fetch(`/api/events/${eventId}/surveys`)
+      if (!res.ok) throw new Error("Failed to load survey")
+      const surveysData = await res.json()
+      const activeSurvey = surveysData?.[0]
 
-    const { data: surveyData } = await supabase
-      .from("surveys")
-      .select("*")
-      .eq("event_id", eventId)
-      .eq("is_active", true)
-      .maybeSingle()
-
-    if (surveyData) {
-      setSurvey(surveyData)
-
-      const { data: questionsData } = await supabase
-        .from("survey_questions")
-        .select("*")
-        .eq("survey_id", surveyData.id)
-        .order("order_index", { ascending: true })
-
-      if (questionsData) setQuestions(questionsData)
+      if (activeSurvey) {
+        setSurvey(activeSurvey)
+        const questionsRes = await fetch(`/api/events/${eventId}/surveys/${activeSurvey.id}/questions`)
+        if (questionsRes.ok) {
+          const questionsData = await questionsRes.json()
+          setQuestions(questionsData || [])
+        }
+      }
+    } catch (error) {
+      console.error("[v0] Error loading survey:", error)
+    } finally {
+      setIsLoading(false)
     }
-
-    setIsLoading(false)
   }
 
   const handleResponseChange = (questionId: string, value: string) => {
@@ -70,25 +66,26 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
     if (!survey) return
 
     setIsSubmitting(true)
-
     try {
-      const responsesToInsert = Object.entries(responses).map(([questionId, responseText]) => ({
-        survey_id: survey.id,
-        question_id: questionId,
-        guest_id: null,
-        response_text: responseText,
-        guest_name: guestName || null,
-      }))
+      const res = await fetch(`/api/events/${eventId}/surveys/${survey.id}/responses`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          responses: Object.entries(responses).map(([questionId, responseText]) => ({
+            question_id: questionId,
+            response_text: responseText,
+            guest_name: guestName || null,
+          })),
+        }),
+      })
 
-      const { error } = await supabase.from("survey_responses").insert(responsesToInsert)
-
-      if (error) throw error
+      if (!res.ok) throw new Error("Failed to submit survey")
 
       setHasSubmitted(true)
       toast.success(safe("thankYou", "Thank you!"))
     } catch (error) {
       console.error("[v0] Error submitting survey:", error)
-      toast.error(safe("submit", "Submit"))
+      toast.error("Failed to submit survey")
     } finally {
       setIsSubmitting(false)
     }
@@ -131,8 +128,8 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
     )
   }
 
-  const surveyTitle = language === "en" && survey.title_en ? survey.title_en : survey.title
-  const surveyDescription = language === "en" && survey.description_en ? survey.description_en : survey.description
+  const surveyTitle = language === "en" && survey?.title_en ? survey.title_en : survey?.title
+  const surveyDescription = language === "en" && survey?.description_en ? survey.description_en : survey?.description
 
   return (
     <div className="space-y-6">
@@ -225,7 +222,7 @@ export function SurveyModule({ eventId, primaryColor }: SurveyModuleProps) {
       <div className="flex justify-end pt-4">
         <Button
           onClick={handleSubmit}
-          disabled={isSubmitting}
+          disabled={isSubmitting || hasSubmitted}
           size="lg"
           style={{ backgroundColor: primaryColor }}
           className="text-white"

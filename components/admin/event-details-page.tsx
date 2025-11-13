@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowLeft, Calendar, Users, ImageIcon, MessageSquare, MenuIcon } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import type { Event, Photo } from "@/lib/types/database"
 
@@ -23,7 +22,6 @@ export function EventDetailsPage({ eventId }: EventDetailsPageProps) {
   const [bingoItems, setBingoItems] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
     loadEventDetails()
@@ -31,71 +29,44 @@ export function EventDetailsPage({ eventId }: EventDetailsPageProps) {
 
   const loadEventDetails = async () => {
     setIsLoading(true)
+    try {
+      const [eventRes, scheduleRes, menuRes, surveyRes, bingoRes] = await Promise.all([
+        fetch(`/api/events/${eventId}`),
+        fetch(`/api/events/${eventId}/schedule`),
+        fetch(`/api/events/${eventId}/menu`),
+        fetch(`/api/events/${eventId}/surveys`),
+        fetch(`/api/events/${eventId}/bingo`),
+      ])
 
-    // Load event
-    const { data: eventData } = await supabase
-      .from("events")
-      .select(
-        `
-        *,
-        profiles:client_id (
-          email,
-          first_name,
-          last_name
-        )
-      `,
-      )
-      .eq("id", eventId)
-      .single()
+      if (eventRes.ok) {
+        const eventData = await eventRes.json()
+        setEvent(eventData)
+      }
 
-    if (eventData) setEvent(eventData)
+      if (scheduleRes.ok) {
+        const scheduleData = await scheduleRes.json()
+        setScheduleItems(scheduleData.items || [])
+      }
 
-    // Load photos
-    const { data: photosData } = await supabase
-      .from("photos")
-      .select("*")
-      .eq("event_id", eventId)
-      .order("created_at", { ascending: false })
+      if (menuRes.ok) {
+        const menuData = await menuRes.json()
+        setMenuItems(menuData.items || [])
+      }
 
-    if (photosData) setPhotos(photosData)
+      if (surveyRes.ok) {
+        const surveyData = await surveyRes.json()
+        setSurveyQuestions(surveyData.items || [])
+      }
 
-    // Load schedule
-    const { data: scheduleData } = await supabase
-      .from("schedule_items")
-      .select("*")
-      .eq("event_id", eventId)
-      .order("time", { ascending: true })
-
-    if (scheduleData) setScheduleItems(scheduleData)
-
-    // Load menu
-    const { data: menuData } = await supabase
-      .from("menu_items")
-      .select("*")
-      .eq("event_id", eventId)
-      .order("category", { ascending: true })
-
-    if (menuData) setMenuItems(menuData)
-
-    // Load survey questions
-    const { data: surveyData } = await supabase
-      .from("survey_questions")
-      .select("*")
-      .eq("event_id", eventId)
-      .order("order_index", { ascending: true })
-
-    if (surveyData) setSurveyQuestions(surveyData)
-
-    // Load bingo items
-    const { data: bingoData } = await supabase
-      .from("bingo_items")
-      .select("*")
-      .eq("event_id", eventId)
-      .order("position", { ascending: true })
-
-    if (bingoData) setBingoItems(bingoData)
-
-    setIsLoading(false)
+      if (bingoRes.ok) {
+        const bingoData = await bingoRes.json()
+        setBingoItems(bingoData.items || [])
+      }
+    } catch (error) {
+      console.error("[v0] Error loading event details:", error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   if (isLoading || !event) {
@@ -127,7 +98,7 @@ export function EventDetailsPage({ eventId }: EventDetailsPageProps) {
                   </div>
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4" />
-                    {event.profiles?.first_name} {event.profiles?.last_name}
+                    {event.client_email} {event.client_first_name} {event.client_last_name}
                   </div>
                 </div>
               </div>
