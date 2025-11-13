@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { createClient } from "@/lib/supabase/client"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,7 +26,6 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null)
   const [showItemModal, setShowItemModal] = useState(false)
-  const supabase = createClient()
   const t = translations[language]?.modules?.bingo || translations.pl.modules.bingo
 
   useEffect(() => {
@@ -36,15 +34,17 @@ export function BingoModule({ eventId, primaryColor }: BingoModuleProps) {
 
   const loadBingo = async () => {
     setIsLoading(true)
+    try {
+      const response = await fetch(`/api/events/${eventId}/bingo`)
+      const data = await response.json()
 
-    const { data: cardData } = await supabase.from("bingo_cards").select("*").eq("event_id", eventId).maybeSingle()
-
-    if (cardData) {
-      setBingoCard(cardData)
-
-      setShowNameInput(true)
+      if (data && data.length > 0) {
+        setBingoCard(data[0])
+        setShowNameInput(true)
+      }
+    } catch (error) {
+      console.error("Failed to load bingo:", error)
     }
-
     setIsLoading(false)
   }
 

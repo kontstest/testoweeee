@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
 import type { Vendor } from "@/lib/types/database"
 import { motion } from "framer-motion"
 import { translations } from "@/lib/i18n/translations"
@@ -16,7 +15,6 @@ export function VendorsModule({ eventId, primaryColor }: VendorsModuleProps) {
   const { language } = useLanguage()
   const [vendors, setVendors] = useState<Vendor[]>([])
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
   const t = translations[language].modules.vendors
 
   useEffect(() => {
@@ -25,14 +23,15 @@ export function VendorsModule({ eventId, primaryColor }: VendorsModuleProps) {
 
   const fetchVendors = async () => {
     setLoading(true)
-    const { data } = await supabase
-      .from("vendors")
-      .select("*")
-      .eq("event_id", eventId)
-      .in("status", ["confirmed", "paid"])
-      .order("category", { ascending: true })
-
-    setVendors(data || [])
+    try {
+      const response = await fetch(`/api/events/${eventId}/vendors`)
+      const data = await response.json()
+      // Filter only confirmed and paid vendors for guest view
+      const filteredVendors = data.filter((v: Vendor) => v.status === "confirmed" || v.status === "paid")
+      setVendors(filteredVendors || [])
+    } catch (error) {
+      console.error("Failed to load vendors:", error)
+    }
     setLoading(false)
   }
 

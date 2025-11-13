@@ -10,7 +10,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, Trash2, Phone, Mail, Globe, DollarSign } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 import type { Vendor } from "@/lib/types/database"
 import { useToast } from "@/hooks/use-toast"
 
@@ -41,7 +40,6 @@ export function VendorsTab({ eventId }: VendorsTabProps) {
   const [showForm, setShowForm] = useState(false)
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null)
   const { toast } = useToast()
-  const supabase = createClient()
 
   const [formData, setFormData] = useState({
     name: "",
@@ -63,20 +61,16 @@ export function VendorsTab({ eventId }: VendorsTabProps) {
 
   const fetchVendors = async () => {
     setLoading(true)
-    const { data, error } = await supabase
-      .from("vendors")
-      .select("*")
-      .eq("event_id", eventId)
-      .order("category", { ascending: true })
-
-    if (error) {
+    try {
+      const response = await fetch(`/api/events/${eventId}/vendors`)
+      const data = await response.json()
+      setVendors(data || [])
+    } catch (error) {
       toast({
         title: "Error",
         description: "Failed to load vendors",
         variant: "destructive",
       })
-    } else {
-      setVendors(data || [])
     }
     setLoading(false)
   }
@@ -100,9 +94,13 @@ export function VendorsTab({ eventId }: VendorsTabProps) {
     }
 
     if (editingVendor) {
-      const { error } = await supabase.from("vendors").update(vendorData).eq("id", editingVendor.id)
+      const response = await fetch(`/api/events/${eventId}/vendors/${editingVendor.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(vendorData),
+      })
 
-      if (error) {
+      if (!response.ok) {
         toast({
           title: "Error",
           description: "Failed to update vendor",
@@ -114,9 +112,13 @@ export function VendorsTab({ eventId }: VendorsTabProps) {
         fetchVendors()
       }
     } else {
-      const { error } = await supabase.from("vendors").insert(vendorData)
+      const response = await fetch(`/api/events/${eventId}/vendors`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(vendorData),
+      })
 
-      if (error) {
+      if (!response.ok) {
         toast({
           title: "Error",
           description: "Failed to add vendor",
@@ -151,8 +153,10 @@ export function VendorsTab({ eventId }: VendorsTabProps) {
   const handleDelete = async (id: string) => {
     toast.promise(
       (async () => {
-        const { error } = await supabase.from("vendors").delete().eq("id", id)
-        if (error) throw error
+        const response = await fetch(`/api/events/${eventId}/vendors/${id}`, {
+          method: "DELETE",
+        })
+        if (!response.ok) throw new Error("Failed to delete")
         fetchVendors()
       })(),
       {

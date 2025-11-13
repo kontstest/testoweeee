@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 
 interface GuestAuthDialogProps {
@@ -21,15 +20,8 @@ interface GuestAuthDialogProps {
 export function GuestAuthDialog({ open, onOpenChange, onSuccess, eventId }: GuestAuthDialogProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
 
-  const [loginData, setLoginData] = useState({ email: "", password: "" })
-  const [signupData, setSignupData] = useState({
-    email: "",
-    password: "",
-    firstName: "",
-    lastName: "",
-  })
+  // ... state for loginData and signupData ...
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,11 +29,20 @@ export function GuestAuthDialog({ open, onOpenChange, onSuccess, eventId }: Gues
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: loginData.email,
-        password: loginData.password,
+      const response = await fetch("/api/auth/guest-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: loginData.email,
+          password: loginData.password,
+          eventId,
+        }),
       })
-      if (error) throw error
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Login failed")
+      }
 
       onSuccess()
       onOpenChange(false)
@@ -58,20 +59,22 @@ export function GuestAuthDialog({ open, onOpenChange, onSuccess, eventId }: Gues
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signUp({
-        email: signupData.email,
-        password: signupData.password,
-        options: {
-          emailRedirectTo:
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/event/${eventId}`,
-          data: {
-            first_name: signupData.firstName,
-            last_name: signupData.lastName,
-            role: "guest",
-          },
-        },
+      const response = await fetch("/api/auth/guest-signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: signupData.email,
+          password: signupData.password,
+          firstName: signupData.firstName,
+          lastName: signupData.lastName,
+          eventId,
+        }),
       })
-      if (error) throw error
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Signup failed")
+      }
 
       toast.success("Please check your email to confirm your account!")
       onOpenChange(false)
@@ -81,6 +84,14 @@ export function GuestAuthDialog({ open, onOpenChange, onSuccess, eventId }: Gues
       setIsLoading(false)
     }
   }
+
+  const [loginData, setLoginData] = useState({ email: "", password: "" })
+  const [signupData, setSignupData] = useState({
+    email: "",
+    password: "",
+    firstName: "",
+    lastName: "",
+  })
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

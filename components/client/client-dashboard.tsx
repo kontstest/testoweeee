@@ -17,7 +17,6 @@ import {
   Heart,
   Eye,
 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import type { Event } from "@/lib/types/database"
 import { CustomizationTab } from "./customization-tab"
@@ -45,17 +44,17 @@ export function ClientDashboard({ events: initialEvents, userId }: ClientDashboa
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(events[0] || null)
   const [showQRDialog, setShowQRDialog] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
+    await fetch("/api/auth/logout", { method: "POST" })
     router.push("/")
   }
 
   const refreshEvent = async () => {
     if (!selectedEvent) return
 
-    const { data } = await supabase.from("events").select("*").eq("id", selectedEvent.id).single()
+    const response = await fetch(`/api/events/${selectedEvent.id}`)
+    const data = await response.json()
 
     if (data) {
       setSelectedEvent(data)

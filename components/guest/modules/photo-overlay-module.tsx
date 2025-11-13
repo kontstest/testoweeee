@@ -4,7 +4,6 @@ import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button-wedding"
-import { createClient } from "@/lib/supabase/client"
 import type { PhotoOverlay } from "@/lib/types/database"
 import { Download } from "lucide-react"
 import { toast } from "sonner"
@@ -25,7 +24,6 @@ export function PhotoOverlayModule({ eventId, primaryColor }: PhotoOverlayModule
   const [textInputs, setTextInputs] = useState<{ [key: string]: string }>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const supabase = createClient()
   const t = translations[language].modules.photoOverlay || {
     title: "Photo with Template",
     selectTemplate: "Select Template",
@@ -41,15 +39,12 @@ export function PhotoOverlayModule({ eventId, primaryColor }: PhotoOverlayModule
 
   const loadOverlays = async () => {
     setIsLoading(true)
-    const { data } = await supabase
-      .from("photo_overlays")
-      .select("*")
-      .eq("event_id", eventId)
-      .eq("is_active", true)
-      .order("order_index", { ascending: true })
-
-    if (data) {
-      setOverlays(data as PhotoOverlay[])
+    try {
+      const response = await fetch(`/api/events/${eventId}/photo-overlays`)
+      const data = await response.json()
+      setOverlays(data || [])
+    } catch (error) {
+      console.error("Failed to load overlays:", error)
     }
     setIsLoading(false)
   }
@@ -198,7 +193,8 @@ export function PhotoOverlayModule({ eventId, primaryColor }: PhotoOverlayModule
               onChange={handleImageUpload}
               className="hidden"
             />
-            <Camera className="w-8 h-8 mx-auto mb-2" style={{ color: primaryColor }} />
+            {/* Placeholder for Camera icon */}
+            <div className="w-8 h-8 mx-auto mb-2" style={{ color: primaryColor }} />
             <p className="text-sm font-medium mb-1">{t.uploadPhoto}</p>
             <p className="text-xs text-muted-foreground">
               {uploadedImage ? "Photo selected" : "Click or tap to select photo"}
@@ -255,4 +251,5 @@ export function PhotoOverlayModule({ eventId, primaryColor }: PhotoOverlayModule
   )
 }
 
-import { Camera } from "lucide-react"
+// Placeholder for Camera icon import
+// import { Camera } from 'lucide-react'
