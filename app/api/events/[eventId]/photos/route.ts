@@ -62,7 +62,8 @@ export async function POST(
     const fileExt = file.name.split(".").pop() || "jpg";
     const filePath = `${eventId}/guests/${randomUUID()}.${fileExt}`;
 
-    const supabase = await createClient();
+    // Supabase client
+    const supabase = createClient();
 
     // Upload do Supabase Storage
     const { error: uploadError } = await supabase.storage
@@ -78,7 +79,14 @@ export async function POST(
     }
 
     // Publiczny URL do zdjęcia
-    const { data: { publicUrl } } = supabase.storage.from("photos").getPublicUrl(filePath);
+    const { data, error: publicUrlError } = supabase.storage.from("photos").getPublicUrl(filePath);
+
+    if (publicUrlError || !data?.publicUrl) {
+      console.error("[v0] Supabase getPublicUrl error:", publicUrlError);
+      return NextResponse.json({ error: "Could not get public URL" }, { status: 500 });
+    }
+
+    const publicUrl = data.publicUrl;
 
     // Zapis do bazy danych
     const result = await query((client) =>
