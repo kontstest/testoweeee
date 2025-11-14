@@ -6,6 +6,8 @@ export async function getDbClient() {
   return supabase
 }
 
+export { getDbClient as supabase }
+
 // Helper to execute queries - can be replaced with pg, postgres.js, etc.
 export async function query<T>(
   queryFn: (client: any) => Promise<{ data: T | null; error: any }>,

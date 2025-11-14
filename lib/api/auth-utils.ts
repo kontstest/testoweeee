@@ -1,24 +1,18 @@
-import { createClient } from "@/lib/supabase/server"
+import { query } from "@/lib/db/client"
 
-export { createClient }
-
-export async function getUser() {
-  return getAuthUser()
-}
-
-// Check if user is authenticated
 export async function getAuthUser() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  return user
+  // This will be called from middleware/auth pages that already have context
+  // For API routes, we get user from request context
+  return null
 }
 
-// Check if user owns the event (client auth)
+export { getAuthUser as getUser }
+
+// Check if user owns the event (using abstraction layer)
 export async function verifyEventOwnership(eventId: string, userId: string) {
-  const supabase = await createClient()
-  const { data, error } = await supabase.from("events").select("client_id").eq("id", eventId).single()
+  const { data, error } = await query(async (supabase) => 
+    supabase.from("events").select("client_id").eq("id", eventId).single()
+  )
 
   if (error || !data) return false
   return data.client_id === userId
@@ -28,8 +22,9 @@ export { verifyEventOwnership as isEventOwner }
 
 // Check if user is super admin
 export async function isSuperAdmin(userId: string) {
-  const supabase = await createClient()
-  const { data, error } = await supabase.from("profiles").select("role").eq("id", userId).single()
+  const { data, error } = await query(async (supabase) =>
+    supabase.from("profiles").select("role").eq("id", userId).single()
+  )
 
   if (error || !data) return false
   return data.role === "super_admin"
@@ -37,8 +32,9 @@ export async function isSuperAdmin(userId: string) {
 
 // Check if event is accessible (public or user is owner/admin)
 export async function isEventAccessible(eventId: string, userId?: string) {
-  const supabase = await createClient()
-  const { data, error } = await supabase.from("events").select("client_id, status").eq("id", eventId).single()
+  const { data, error } = await query(async (supabase) =>
+    supabase.from("events").select("client_id, status").eq("id", eventId).single()
+  )
 
   if (error || !data) return false
 

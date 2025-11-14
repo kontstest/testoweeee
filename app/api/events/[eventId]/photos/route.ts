@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { query, supabase } from "@/lib/db/client"
+import { query } from "@/lib/db/client"
 import { getUser } from "@/lib/api/auth-utils"
 import { randomUUID } from "crypto"
+import { createSupabaseClient } from "@/lib/supabase/server"
 
 /**
  * GET /api/events/[eventId]/photos
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest, { params }: { params: { eventId
 
     const fileExt = file.name.split(".").pop() || "jpg"
     const filePath = `${eventId}/${user.id}/${randomUUID()}.${fileExt}`
-
+    const supabase = createSupabaseClient()
     // Upload do Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from("photos")
