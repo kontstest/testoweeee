@@ -24,6 +24,8 @@ export async function verifyEventOwnership(eventId: string, userId: string) {
   return data.client_id === userId
 }
 
+export { verifyEventOwnership as isEventOwner }
+
 // Check if user is super admin
 export async function isSuperAdmin(userId: string) {
   const supabase = await createClient()
