@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db/client";
 import { randomUUID } from "crypto";
-import { createSupabaseClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 /**
  * GET /api/events/[eventId]/photos
@@ -62,8 +62,7 @@ export async function POST(
     const fileExt = file.name.split(".").pop() || "jpg";
     const filePath = `${eventId}/guests/${randomUUID()}.${fileExt}`;
 
-    // Tworzymy klienta Supabase
-    const supabase = await createSupabaseClient();
+    const supabase = await createClient();
 
     // Upload do Supabase Storage
     const { error: uploadError } = await supabase.storage
