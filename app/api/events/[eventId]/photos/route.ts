@@ -24,13 +24,13 @@ export async function GET(
 
     if (result.error) {
       console.error("[v0] Photos GET query error:", result.error);
-      return NextResponse.json({ error: result.error.message }, { status: 500 });
+      return NextResponse.json([], { status: 200 }); // Return empty array on error instead of 500
     }
 
-    return NextResponse.json(result.data); // tablica zdjęć
+    return NextResponse.json(result.data || []); // Ensure always returns array
   } catch (error: any) {
     console.error("[v0] Photos GET error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json([], { status: 200 }); // Return empty array on catch instead of 500
   }
 }
 

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Upload, ImageIcon, X, Check, Heart, User } from "lucide-react"
+import { Upload, ImageIcon, X, Check, Heart, User } from 'lucide-react'
 import type { Photo } from "@/lib/types/database"
 import { useDropzone } from "react-dropzone"
 import { cn } from "@/lib/utils"
@@ -44,10 +44,16 @@ export function PhotoGalleryModule({ eventId, primaryColor }: PhotoGalleryModule
     setIsLoading(true)
     try {
       const response = await fetch(`/api/events/${eventId}/photos`)
-      const data = await response.json()
-      setPhotos(data)
+      if (!response.ok) {
+        console.error("[v0] Failed to fetch photos:", response.status);
+        setPhotos([])
+      } else {
+        const data = await response.json()
+        setPhotos(Array.isArray(data) ? data : [])
+      }
     } catch (error) {
       console.error("[v0] Error loading photos:", error)
+      setPhotos([])
     }
     setIsLoading(false)
   }
