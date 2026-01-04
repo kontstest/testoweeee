@@ -20,7 +20,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: result.error }, { status: 500 })
     }
 
-    return NextResponse.json({ data: result.data || [] })
+    return NextResponse.json(result.data || [])
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
