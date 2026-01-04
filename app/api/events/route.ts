@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { query } from "@/lib/db/client"
 import { getAuthUser, isSuperAdmin } from "@/lib/api/auth-utils"
 
 // GET /api/events - List user's events or all events (admin)
@@ -10,22 +10,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const supabase = await createClient()
     const isAdmin = await isSuperAdmin(user.id)
 
-    let query = supabase.from("events").select("*")
+    const result = await query((client) => {
+      let q = client.from("events").select("*")
 
-    if (!isAdmin) {
-      query = query.eq("client_id", user.id)
+      if (!isAdmin) {
+        q = q.eq("client_id", user.id)
+      }
+
+      return q
+    })
+
+    if (result.error) {
+      return NextResponse.json({ error: result.error }, { status: 500 })
     }
 
-    const { data, error } = await query
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    return NextResponse.json({ data })
+    return NextResponse.json({ data: result.data })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
@@ -40,28 +41,29 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const supabase = await createClient()
 
-    const { data, error } = await supabase
-      .from("events")
-      .insert({
-        name: body.name,
-        event_date: body.event_date,
-        status: "draft",
-        client_id: user.id,
-        event_type: body.event_type || "event",
-        primary_color: body.primary_color || "#8B5CF6",
-        secondary_color: body.secondary_color || "#EC4899",
-        content_background_color: body.content_background_color || "#FFFFFF",
-      })
-      .select()
-      .single()
+    const result = await query((client) =>
+      client
+        .from("events")
+        .insert({
+          name: body.name,
+          event_date: body.event_date,
+          status: "draft",
+          client_id: user.id,
+          event_type: body.event_type || "event",
+          primary_color: body.primary_color || "#8B5CF6",
+          secondary_color: body.secondary_color || "#EC4899",
+          content_background_color: body.content_background_color || "#FFFFFF",
+        })
+        .select()
+        .single(),
+    )
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (result.error) {
+      return NextResponse.json({ error: result.error }, { status: 500 })
     }
 
-    return NextResponse.json({ data }, { status: 201 })
+    return NextResponse.json({ data: result.data }, { status: 201 })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
